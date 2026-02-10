@@ -1,0 +1,9 @@
+src/__tests__/
+tsconfig.json
+tsconfig.build.json
+.eslintrc*
+.github/
+.gitignore
+example/
+docs/
+CONTRIBUTING.md
