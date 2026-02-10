@@ -6,14 +6,15 @@ on:
       - main
     paths:
       - "website/**"
+      - "docs/**"
+
+permissions:
+  contents: write
 
 jobs:
   deploy:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: website
     steps:
       - uses: actions/checkout@v4
 
@@ -23,10 +24,17 @@ jobs:
           cache: "npm"
           cache-dependency-path: website/package-lock.json
 
+      - name: Sync docs from root
+        run: |
+          rm -rf website/docs
+          cp -R docs website/docs
+
       - name: Install dependencies
+        working-directory: website
         run: npm ci
 
       - name: Build website
+        working-directory: website
         run: npm run build
 
       - name: Deploy to GitHub Pages
