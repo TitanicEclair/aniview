@@ -128,7 +128,7 @@ When you swipe from Home to Profile, this circle smoothly scales up and turns pi
 
 ### Step 4: Assemble the App
 
-Wrap everything in `AniviewProvider` and `GestureHandlerRootView`:
+Wrap everything in `AniviewProvider` and `GestureHandlerRootView`. Be sure to place the morphing `Aniview` component as a **sibling** to the pages, not nested inside one.
 
 ```tsx
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -139,16 +139,39 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AniviewProvider config={config}>
         <View style={{ flex: 1 }}>
+          {/* Pages */}
           <HomePage />
           <ProfilePage />
           <SettingsPage />
           <GalleryPage />
+
+          {/* Morphing Component (as Sibling) */}
+          <Aniview
+            pageId="HOME"
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: "#2196F3",
+            }}
+            frames={{
+              atProfile: {
+                page: "PROFILE",
+                style: {
+                  backgroundColor: "#E91E63",
+                  transform: [{ scale: 1.5 }],
+                },
+              },
+            }}
+          />
         </View>
       </AniviewProvider>
     </GestureHandlerRootView>
   );
 }
 ```
+
+> **Note**: Aniview components apply transforms relative to the "World". Nesting them inside other Aniview components causes **transform summation** (double movement). See [Advanced Patterns](04-advanced-patterns.md#1-sibling-composition) for more details.
 
 Swiping works automatically — no gesture code required. For programmatic navigation, pass a `ref`:
 

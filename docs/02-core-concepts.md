@@ -140,6 +140,8 @@ const scrollFactor = useSharedValue(1);
   config={config}
   events={{ scrollFactor }}  // Expose event
 >
+  {/* Children */}
+</AniviewProvider>
 
 // In your component:
 <Aniview
@@ -151,7 +153,7 @@ const scrollFactor = useSharedValue(1);
       style: { opacity: 0.5 }
     }
   }}
->
+/>
 ```
 
 **Use Cases:**
