@@ -15,14 +15,14 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://your-github-username.github.io',
+  url: 'https://TitanicEclair.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/aniview/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'your-github-username', // Usually your GitHub org/user name.
+  organizationName: 'TitanicEclair', // Usually your GitHub org/user name.
   projectName: 'aniview', // Usually your repo name.
 
   onBrokenLinks: 'ignore', // Ignore because we might have relative links in MD files
@@ -75,7 +75,7 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          href: 'https://github.com/your-github-username/aniview',
+          href: 'https://github.com/TitanicEclair/aniview',
           label: 'GitHub',
           position: 'right',
         },
@@ -106,7 +106,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/your-github-username/aniview',
+              href: 'https://github.com/TitanicEclair/aniview',
             },
           ],
         },
