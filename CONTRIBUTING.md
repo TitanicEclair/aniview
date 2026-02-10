@@ -113,6 +113,27 @@ npm run lint          # Check code style
 npm run typecheck     # Type validation
 ```
 
+### Testing Architecture
+
+Aniview uses **Jest** for unit testing. Since the library relies on native modules (`react-native-reanimated`, `react-native-gesture-handler`) which are written in C++ and don't run in Node.js, we use **Manual Mocks** to prevent crashes during tests.
+
+- **`__mocks__/`**: Contains fake implementations of native libraries.
+- **`jest.config.js`**: Maps imports to these mocks automatically.
+- **`tsx`**: Used to transform TypeScript files on the fly.
+
+If you add new native dependencies, you may need to add a mock in `__mocks__/`.
+
+### CI/CD Pipeline
+
+This repository uses **GitHub Actions** for Continuous Integration.
+
+- **Triggers**: Pushes to `main` and all Pull Requests.
+- **Jobs**:
+  - `lint`: Runs `npm run lint` to check for TypeScript errors.
+  - `test`: Runs `npm test` to verify logic.
+
+**Note**: The pipeline must pass before changes can be merged.
+
 ## Coding Standards
 
 ### TypeScript Style
