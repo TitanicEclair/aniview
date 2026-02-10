@@ -1,3 +1,9 @@
+---
+id: advanced-patterns
+slug: /advanced-patterns
+title: Advanced Patterns
+---
+
 # Advanced Patterns
 
 This guide covers advanced Aniview patterns for complex applications.

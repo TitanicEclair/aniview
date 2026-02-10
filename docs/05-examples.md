@@ -1,3 +1,9 @@
+---
+id: examples
+slug: /examples
+title: Examples & Recipes
+---
+
 # Examples & Recipes
 
 This guide walks through the **Aniview Example App** — a 3×2 spatial grid that demonstrates every major feature.

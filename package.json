@@ -1,6 +1,6 @@
 {
   "name": "aniview",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Absolute World Coordinate Animation Engine for React Native",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
     "type": "git",
     "url": "git+https://github.com/TitanicEclair/aniview.git"
   },
-  "homepage": "https://github.com/TitanicEclair/aniview#readme",
+  "homepage": "https://TitanicEclair.github.io/aniview/",
   "bugs": {
     "url": "https://github.com/TitanicEclair/aniview/issues"
   },

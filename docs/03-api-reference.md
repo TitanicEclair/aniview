@@ -1,3 +1,9 @@
+---
+id: api-reference
+slug: /api-reference
+title: API Reference
+---
+
 # API Reference
 
 ## Table of Contents

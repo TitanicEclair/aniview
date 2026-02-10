@@ -1,3 +1,9 @@
+---
+id: core-concepts
+slug: /core-concepts
+title: Core Concepts
+---
+
 # Core Concepts
 
 ## Architecture Overview

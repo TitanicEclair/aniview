@@ -1,3 +1,9 @@
+---
+id: getting-started
+slug: /getting-started
+title: Getting Started
+---
+
 # Getting Started
 
 ## Prerequisites
