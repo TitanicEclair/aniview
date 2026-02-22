@@ -18,9 +18,13 @@ export interface AniviewFrame {
   value?: number;
   /** Style overrides for this frame */
   style?: ViewStyle | ViewStyle[];
-  /** 
+  /**
    * If true, this event-driven frame remains active across all pages.
    * If false (default), the effect is modulated by proximity to the component's home page.
+   */
+  eventPersistent?: boolean;
+  /**
+   * @deprecated Use `eventPersistent` instead. Kept for backward compatibility.
    */
   persistent?: boolean;
   /** Optional opacity override shortcut */

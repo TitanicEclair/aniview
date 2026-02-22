@@ -107,6 +107,7 @@ interface AniviewFrame {
   // Event trigger (1D animation)
   event?: string;
   value?: number;
+  eventPersistent?: boolean; // Keep event effect active across pages
 
   // Style overrides
   style?: ViewStyle | ViewStyle[];
@@ -417,6 +418,7 @@ interface AniviewFrame {
   page?: number | string;
   event?: string;
   value?: number;
+  eventPersistent?: boolean;
   style?: ViewStyle | ViewStyle[];
   opacity?: number;
   scale?: number;

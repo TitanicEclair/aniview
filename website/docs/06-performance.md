@@ -147,14 +147,14 @@ Aniview modulates event-driven animations by **presence** — a value from 0 to 
 
 This means you don't need to manually gate event effects. A scroll-linked header on Page 0 won't "leak" its scroll offset into Page 1's layout.
 
-If you need an event to stay active even when far from the home page, use `persistent: true` on the event frame:
+If you need an event to stay active even when far from the home page, use `eventPersistent: true` on the event frame:
 
 ```tsx
 frames={{
   scrolled: {
     event: 'scrollY',
     value: 100,
-    persistent: true, // Effect stays active on all pages
+    eventPersistent: true, // Effect stays active on all pages
     style: { opacity: 0.5 },
   },
 }}

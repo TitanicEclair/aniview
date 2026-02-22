@@ -140,23 +140,53 @@ export class AniviewConfig implements IAniviewConfig {
     if (overlaps.cols) overlaps.cols.forEach((v, i) => { if (i < this.colOverlaps.length) this.colOverlaps[i] = v; });
   }
 
+  /**
+   * Caches measured local layout for a component key.
+   *
+   * @param componentId - Stable component cache key.
+   * @param layout - Measured local position.
+   * @returns void
+   */
   public registerLayout(componentId: string, layout: { x: number; y: number }) {
     this.layoutCache[componentId] = layout;
   }
 
+  /**
+   * Reads cached local layout for a component key.
+   *
+   * @param componentId - Stable component cache key.
+   * @returns Cached layout when available.
+   */
   public getLayout(componentId: string) {
     return this.layoutCache[componentId];
   }
 
+  /**
+   * Returns the latest tracked provider dimensions.
+   *
+   * @returns Current context dimensions.
+   */
   get contextDims() {
     return this._contextDims;
   }
 
 
+  /**
+   * Updates dimension state used for offset and gesture math.
+   *
+   * @param dims - Latest provider dimensions.
+   * @returns void
+   */
   public updateDimensions(dims: AniviewContextType['dimensions']) {
     this._contextDims = dims;
   }
 
+  /**
+   * Merges spring physics overrides into current snap config.
+   *
+   * @param config - Partial spring configuration.
+   * @returns void
+   */
   public updateSpringConfig(config: any) {
     this.springConfig = { ...this.springConfig, ...config };
   }
@@ -168,7 +198,13 @@ export class AniviewConfig implements IAniviewConfig {
     return this.springConfig;
   }
 
-  /** Gets the global (x, y) offset for a specific page relative to origin. */
+  /**
+   * Gets world-space offset of a page relative to the default page origin.
+   *
+   * @param pageId - Numeric or semantic page id.
+   * @param dims - Active dimensions for offset math.
+   * @returns Page offset in world coordinates.
+   */
   public getPageOffset(pageId: number | string, dims: AniviewContextType['dimensions']) {
     const resolvedId = this.resolvePageId(pageId);
     return AniviewMath.getPageOffset(
@@ -181,6 +217,12 @@ export class AniviewConfig implements IAniviewConfig {
     );
   }
 
+  /**
+   * Resolves semantic page id strings to numeric ids.
+   *
+   * @param pageId - Numeric or semantic page id.
+   * @returns Numeric page id, or parsed fallback.
+   */
   public resolvePageId(pageId: number | string): number {
     if (typeof pageId === 'number') return pageId;
     if (this.pageMap[pageId] !== undefined) return this.pageMap[pageId];
@@ -193,10 +235,21 @@ export class AniviewConfig implements IAniviewConfig {
   // To be injected by generateGesture/Provider
   private _currentPageSV: SharedValue<number | string> = makeMutable<number | string>(0);
 
+  /**
+   * Returns current-page shared value used by gesture/provider coordination.
+   *
+   * @returns Current page shared value.
+   */
   public getCurrentPage(): SharedValue<number | string> {
     return this._currentPageSV;
   }
 
+  /**
+   * Injects current-page shared value from provider.
+   *
+   * @param sv - Shared value representing last snapped target page.
+   * @returns void
+   */
   public _setCurrentPageSV(sv: SharedValue<number | string>) {
     this._currentPageSV = sv;
   }
@@ -204,6 +257,12 @@ export class AniviewConfig implements IAniviewConfig {
   /** 
    * Pre-calculates absolute coordinates for a component's keyframes.
    * Segregates Spatial (X/Y) frames from Event-based (1D) frames.
+   *
+   * @param pageId - Home page for the component.
+   * @param dims - Dimensions for page offset calculations.
+   * @param keyframes - Spatial and/or event frame definitions.
+   * @param localLayout - Local measured position of the component.
+   * @returns Home offset, baked spatial frames, sorted event lanes, and local layout.
    */
   public register(
     pageId: number | string, 
@@ -263,7 +322,13 @@ export class AniviewConfig implements IAniviewConfig {
   }
 
 
-  /** Minimal offset context for direct page references */
+  /**
+   * Registers a lightweight page context without keyframe processing.
+   *
+   * @param pageId - Numeric or semantic page id.
+   * @param dims - Dimensions for page offset calculations.
+   * @returns Offset and viewport dimensions used by consumers.
+   */
   public registerPage(pageId: number | string, dims: AniviewContextType['dimensions']) {
     return {
       offset: this.getPageOffset(pageId, dims),
@@ -274,7 +339,11 @@ export class AniviewConfig implements IAniviewConfig {
     };
   }
 
-  /** Returns all valid page IDs defined in the layout matrix */
+  /**
+   * Returns all active page ids from the layout matrix.
+   *
+   * @returns List of active numeric page ids.
+   */
   public getPages(): number[] {
     const pages: number[] = [];
     const rows = this.layout.length;
@@ -290,7 +359,12 @@ export class AniviewConfig implements IAniviewConfig {
     return pages;
   }
 
-  /** Map of PageID -> (x, y) coordinates */
+  /**
+   * Builds page-id to world-offset map for all active pages.
+   *
+   * @param dims - Dimensions for page offset calculations.
+   * @returns Mapping of page id to offset.
+   */
   public getPagesMap(dims: AniviewContextType['dimensions']): Record<number, { x: number; y: number }> {
     const map: Record<number, { x: number; y: number }> = {};
     const pages = this.getPages();
@@ -301,7 +375,12 @@ export class AniviewConfig implements IAniviewConfig {
     return map;
   }
 
-  /** Returns calculated min/max world boundaries for gesture clamping */
+  /**
+   * Computes world bounds for gesture clamping.
+   *
+   * @param dims - Dimensions used for bounds calculation.
+   * @returns Minimum and maximum world coordinates.
+   */
   public getWorldBounds(dims: AniviewContextType['dimensions']) {
     return AniviewMath.getWorldBounds(
        this.getPages(),
@@ -316,6 +395,17 @@ export class AniviewConfig implements IAniviewConfig {
   /**
    * Generates the core Pan Gesture logic.
    * Uses local closures to ensure UI-thread safety and prevent context loss.
+   *
+   * @param x - Camera x shared value.
+   * @param y - Camera y shared value.
+   * @param onPageChange - Optional JS callback fired after target page selection.
+   * @param lockMask - Optional bitmask lock shared value.
+   * @param simultaneousHandlers - Optional RNGH simultaneous handlers.
+   * @param gestureEnabled - Optional shared toggle for gesture enablement.
+   * @param dims - Optional dimensions override.
+   * @param isSnapping - Optional shared snap-state override.
+   * @param lastTargetId - Optional shared last-target page id.
+   * @returns Configured pan gesture instance.
    */
   public generateGesture(
     x: SharedValue<number>, 
@@ -338,8 +428,23 @@ export class AniviewConfig implements IAniviewConfig {
     const bounds = AniviewMath.getWorldBounds(pages, layout, contextDims, defaultPage, rowOverlaps, colOverlaps);
     const pageMap = this.pageMap;
     
-    /** Edge resistance strength (0.0 = hard wall, 1.0 = no resistance) */
-    const RESISTANCE = 0.08; 
+    /**
+     * Gesture tuning constants kept in one place for readability.
+     * Values intentionally unchanged to preserve existing behavior.
+     */
+    const GESTURE_TUNING = {
+      MIN_DISTANCE: 10,
+      RESISTANCE: 0.08,
+      AXIS_TRANSLATION_THRESHOLD: 3,
+      MAX_SWIPE_PAGES: 1.2,
+      LOCAL_OVERSCROLL_MULTIPLIER: 1.5,
+      VELOCITY_THRESHOLD: 200,
+      DISTANCE_THRESHOLD_RATIO: 0.08,
+      START_FOUND_RATIO: 0.3,
+      BOUNDARY_VELOCITY_DAMPING: 0.5,
+      LOCK_HORIZONTAL_BIT: 1,
+      LOCK_VERTICAL_BIT: 2,
+    } as const;
     const SPRING_CONFIG = this.springConfig;
     const isSingleRow = layout.length <= 1;
 
@@ -347,7 +452,12 @@ export class AniviewConfig implements IAniviewConfig {
     const screenHeight = contextDims.height;
     const rowLength = Math.max(1, layout[0]?.length || 0);
 
-    // Helper to resolve ID on UI thread
+    /**
+     * Resolves semantic ids inside worklet scope.
+     *
+     * @param pid - Numeric or semantic page id.
+     * @returns Numeric page id.
+     */
     const resolveId = (pid: number | string) => {
       'worklet';
       if (typeof pid === 'number') return pid;
@@ -368,6 +478,12 @@ export class AniviewConfig implements IAniviewConfig {
     });
 
 
+    /**
+     * Bridges page-change notification back to JS when provided.
+     *
+     * @param pageId - Resolved numeric target page id.
+     * @returns void
+     */
     const triggerPageChange = (pageId: number) => {
       'worklet';
       if (onPageChange) {
@@ -388,7 +504,7 @@ export class AniviewConfig implements IAniviewConfig {
     }
 
     return pan
-      .minDistance(10)
+      .minDistance(GESTURE_TUNING.MIN_DISTANCE)
       .onBegin(() => {
         'worklet';
         isSnappingVal.value = false;
@@ -425,13 +541,11 @@ export class AniviewConfig implements IAniviewConfig {
         
         const dx = Math.abs(gestureEvent.translationX);
         const dy = Math.abs(gestureEvent.translationY);
-        const TRANSLATION_THRESHOLD = 3; 
-
-        const isHBlocked = lockMask && (lockMask.value & 1);
-        const isVBlocked = lockMask && (lockMask.value & 2);
+        const isHBlocked = lockMask && (lockMask.value & GESTURE_TUNING.LOCK_HORIZONTAL_BIT);
+        const isVBlocked = lockMask && (lockMask.value & GESTURE_TUNING.LOCK_VERTICAL_BIT);
 
         // Lock to an axis after a small movement
-        if (activeAxis.value === 0 && (dx > TRANSLATION_THRESHOLD || dy > TRANSLATION_THRESHOLD)) {
+        if (activeAxis.value === 0 && (dx > GESTURE_TUNING.AXIS_TRANSLATION_THRESHOLD || dy > GESTURE_TUNING.AXIS_TRANSLATION_THRESHOLD)) {
           activeAxis.value = dx > dy ? 1 : 2;
         }
 
@@ -471,35 +585,35 @@ export class AniviewConfig implements IAniviewConfig {
 
         // CLAMP: Prevent skipping multiple pages on fast swipes
         // Limit movement to 1.2 pages max in either direction from start position
-        const maxSwipeDistance = screenWidth * 1.2;
+        const maxSwipeDistance = screenWidth * GESTURE_TUNING.MAX_SWIPE_PAGES;
         const deltaX = newX - startX.value;
         if (Math.abs(deltaX) > maxSwipeDistance) {
           newX = startX.value + (deltaX > 0 ? maxSwipeDistance : -maxSwipeDistance);
         }
 
         // Overscroll limits before resistance triggers
-        const localLimitX = screenWidth * 1.5;
-        const localLimitY = screenHeight * 1.5;
+        const localLimitX = screenWidth * GESTURE_TUNING.LOCAL_OVERSCROLL_MULTIPLIER;
+        const localLimitY = screenHeight * GESTURE_TUNING.LOCAL_OVERSCROLL_MULTIPLIER;
         const lowX = startX.value - localLimitX;
         const highX = startX.value + localLimitX;
 
         // World Bounds Resistance
-        if (newX < bounds.minX) newX = bounds.minX + (newX - bounds.minX) * RESISTANCE;
-        else if (newX > bounds.maxX) newX = bounds.maxX + (newX - bounds.maxX) * RESISTANCE;
+        if (newX < bounds.minX) newX = bounds.minX + (newX - bounds.minX) * GESTURE_TUNING.RESISTANCE;
+        else if (newX > bounds.maxX) newX = bounds.maxX + (newX - bounds.maxX) * GESTURE_TUNING.RESISTANCE;
 
         // Local Velocity Protection
-        if (newX < lowX) newX = lowX + (newX - lowX) * RESISTANCE;
-        else if (newX > highX) newX = highX + (newX - highX) * RESISTANCE;
+        if (newX < lowX) newX = lowX + (newX - lowX) * GESTURE_TUNING.RESISTANCE;
+        else if (newX > highX) newX = highX + (newX - highX) * GESTURE_TUNING.RESISTANCE;
 
         if (!isSingleRow) {
           const lowY = startY.value - localLimitY;
           const highY = startY.value + localLimitY;
           
-          if (newY < bounds.minY) newY = bounds.minY + (newY - bounds.minY) * RESISTANCE;
-          else if (newY > bounds.maxY) newY = bounds.maxY + (newY - bounds.maxY) * RESISTANCE;
+          if (newY < bounds.minY) newY = bounds.minY + (newY - bounds.minY) * GESTURE_TUNING.RESISTANCE;
+          else if (newY > bounds.maxY) newY = bounds.maxY + (newY - bounds.maxY) * GESTURE_TUNING.RESISTANCE;
 
-          if (newY < lowY) newY = lowY + (newY - lowY) * RESISTANCE;
-          else if (newY > highY) newY = highY + (newY - highY) * RESISTANCE;
+          if (newY < lowY) newY = lowY + (newY - lowY) * GESTURE_TUNING.RESISTANCE;
+          else if (newY > highY) newY = highY + (newY - highY) * GESTURE_TUNING.RESISTANCE;
         }
 
         x.value = newX;
@@ -510,9 +624,8 @@ export class AniviewConfig implements IAniviewConfig {
         if (gestureEnabled && gestureEnabled.value === false) return;
         if (snapPointsProcessed.length === 0) return;
         
-        const VELOCITY_THRESHOLD = 200; // Lowered from 500 for high sensitivity
-        const distanceThresholdX = screenWidth * 0.08; // Lowered from 0.15 (8% of screen)
-        const distanceThresholdY = screenHeight * 0.08; // Lowered from 0.15 (8% of screen)
+        const distanceThresholdX = screenWidth * GESTURE_TUNING.DISTANCE_THRESHOLD_RATIO;
+        const distanceThresholdY = screenHeight * GESTURE_TUNING.DISTANCE_THRESHOLD_RATIO;
 
         const stageStartX = startX.value;
         const stageStartY = startY.value;
@@ -532,16 +645,16 @@ export class AniviewConfig implements IAniviewConfig {
         }
         // STRICT: Only treat as "founded start" if within 30% of screen width from page center
         // This prevents edge swipes from being misattributed to the neighboring page
-        const startFound = minStartDist < screenWidth * 0.3;
+        const startFound = minStartDist < screenWidth * GESTURE_TUNING.START_FOUND_RATIO;
 
         let targetX = -1;
         let targetY = -1;
         let targetId = -1;
 
-        const intentRight = gestureEvent.velocityX < -VELOCITY_THRESHOLD || gestureEvent.translationX < -distanceThresholdX;
-        const intentLeft = gestureEvent.velocityX > VELOCITY_THRESHOLD || gestureEvent.translationX > distanceThresholdX;
-        const intentDown = gestureEvent.velocityY < -VELOCITY_THRESHOLD || gestureEvent.translationY < -distanceThresholdY;
-        const intentUp = gestureEvent.velocityY > VELOCITY_THRESHOLD || gestureEvent.translationY > distanceThresholdY;
+        const intentRight = gestureEvent.velocityX < -GESTURE_TUNING.VELOCITY_THRESHOLD || gestureEvent.translationX < -distanceThresholdX;
+        const intentLeft = gestureEvent.velocityX > GESTURE_TUNING.VELOCITY_THRESHOLD || gestureEvent.translationX > distanceThresholdX;
+        const intentDown = gestureEvent.velocityY < -GESTURE_TUNING.VELOCITY_THRESHOLD || gestureEvent.translationY < -distanceThresholdY;
+        const intentUp = gestureEvent.velocityY > GESTURE_TUNING.VELOCITY_THRESHOLD || gestureEvent.translationY > distanceThresholdY;
 
         // Neighbor Snapping
         if (startFound && (intentRight || intentLeft || (!isSingleRow && (intentDown || intentUp)))) {
@@ -607,7 +720,7 @@ export class AniviewConfig implements IAniviewConfig {
         // If we are snapping to a boundary, dampen the velocity to prevent "flick bounce".
         const isBoundaryX = targetX <= bounds.minX || targetX >= bounds.maxX;
         const isBoundaryY = targetY <= bounds.minY || targetY >= bounds.maxY;
-        const velocityDamping = 0.5;
+        const velocityDamping = GESTURE_TUNING.BOUNDARY_VELOCITY_DAMPING;
 
         x.value = withSpring(targetX, { 
           ...SPRING_CONFIG, 

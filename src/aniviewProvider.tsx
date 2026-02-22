@@ -79,6 +79,7 @@ export interface AniviewProviderProps {
  * @param props.gestureEnabled - SharedValue to globally enable/disable the pan gesture.
  * @param props.simultaneousHandlers - RNGH refs for gesture coordination with parent/sibling handlers.
  * @param props.activePage - (Legacy) Declarative page control. Prefer `ref.snapToPage()`.
+ * @returns Provider wrapper that exposes Aniview context and root pan gesture.
  *
  * @example
  * ```tsx
@@ -142,6 +143,12 @@ export const AniviewProvider = forwardRef<AniviewHandle, AniviewProviderProps>((
   // every Aniview component from re-rendering on every page traversal.
   const visiblePagesRef = useRef<Set<number>>(new Set([config.resolvePageId(defaultPage)]));
 
+  /**
+   * Computes near-page visibility set around a center page.
+   *
+   * @param centerPage - Current snapped or targeted center page.
+   * @returns void
+   */
   const updateVisibility = (centerPage: number | string) => {
     const visible = new Set<number>();
     const pages = config.getPages();
@@ -200,6 +207,12 @@ export const AniviewProvider = forwardRef<AniviewHandle, AniviewProviderProps>((
   }, [dimensions, config]);
 
   // --- ONLAYOUT AUTO-SIZING ---
+  /**
+   * Tracks provider container layout and updates dimensions when changed.
+   *
+   * @param e - Native layout event from the provider stage view.
+   * @returns void
+   */
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height, x: layoutX, y: layoutY } = e.nativeEvent.layout;
     

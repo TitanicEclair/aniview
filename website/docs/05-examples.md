@@ -1,3 +1,9 @@
+---
+id: examples
+slug: /examples
+title: Examples & Recipes
+---
+
 # Examples & Recipes
 
 This guide walks through the **Aniview Example App** — a 3×2 spatial grid that demonstrates every major feature.
@@ -145,7 +151,7 @@ function Page3({ zoomEvent }: { zoomEvent: any }) {
       event: "zoom",
       value: 0.5,
       style: { transform: [{ scale: 1.5 }] },
-      persistent: true,
+      eventPersistent: true,
     },
   };
 
@@ -630,30 +636,30 @@ Page 3 demonstrates the difference between default and persistent components:
 - **"Resets" dot** (left): Uses default virtualization. When you navigate far away (>1.5 screens), this component unmounts. On return, `RandomDot` re-mounts and `useRef(Math.random())` generates a **new** color.
 - **"Persists" dot** (right): Uses `persistent={true}`. The component stays mounted regardless of distance, preserving its original color.
 
-### 4. Zoom Event & Persistent Event Frames
+### 4. Zoom Event & Event-Persistent Frames
 
 The "Toggle Zoom" button on Page 3 drives a shared `zoom` event that scales both dots. The frame's `value: 0.5` means the dots reach full scale (1.5×) when the event is only halfway to 1, giving the animation a snappier feel.
 
 > [!NOTE]
 > **Toggle pattern**: The zoom toggle uses a `useRef(false)` to track the intended on/off state rather than reading the animated `SharedValue` mid-spring. Reading `sharedValue.value` during a spring animation returns a fractional intermediate, making `=== 0` checks unreliable. The ref ensures instant, deterministic toggling regardless of animation progress.
 
-#### `persistent: true` on Event Frames
+#### `eventPersistent: true` on Event Frames
 
-The zoom frame uses `persistent: true`. This is **different** from `persistent={true}` on an `<Aniview>` component — they control separate things:
+The zoom frame uses `eventPersistent: true`. This is **different** from `persistent={true}` on an `<Aniview>` component — they control separate things:
 
 | Persistent                                | What it controls       | Effect                                                                                                             |
 | ----------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `persistent: true` on a **frame**         | Event lane **weight**  | Event effect stays at full strength regardless of camera distance from the home page (bypasses presence-weighting) |
+| `eventPersistent: true` on a **frame**    | Event lane **weight**  | Event effect stays at full strength regardless of camera distance from the home page (bypasses presence-weighting) |
 | `persistent={true}` on an **`<Aniview>`** | Component **mounting** | Component stays in the React tree even when far from the camera (bypasses virtualization)                          |
 
 These two are **independent**. If you want an event effect to work across all pages, you need **both**:
 
-1. `persistent: true` on the event frame — so the effect isn't faded out by presence
+1. `eventPersistent: true` on the event frame — so the effect isn't faded out by presence
 2. `persistent={true}` on the `<Aniview>` component — so the component itself isn't unmounted
 
-Without both, a persistent event frame on a non-persistent component would still unmount when far away, losing the event effect entirely.
+Without both, an event-persistent frame on a non-persistent component would still unmount when far away, losing the event effect entirely.
 
-In the Page 3 example, the "Persists" dot has both: `persistent: true` on the zoom frame **and** `persistent={true}` on its `<Aniview>`, so it stays zoomed even on distant pages. The "Resets" dot only has `persistent: true` on the frame — its component still unmounts when far away.
+In the Page 3 example, the "Persists" dot has both: `eventPersistent: true` on the zoom frame **and** `persistent={true}` on its `<Aniview>`, so it stays zoomed even on distant pages. The "Resets" dot only has `eventPersistent: true` on the frame — its component still unmounts when far away.
 
 ### 5. Transform Origin
 
