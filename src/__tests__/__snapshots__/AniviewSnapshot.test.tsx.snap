@@ -1,7 +1,187 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Aniview Snapshot Suite Scenario 1: Default Center Aligned 1`] = `null`;
+exports[`Aniview Snapshot Suite Scenario 1: Default Center Aligned 1`] = `
+<View
+  style={
+    [
+      {
+        "height": "100%",
+        "width": "100%",
+      },
+      {
+        "alignItems": "center",
+        "justifyContent": "center",
+      },
+    ]
+  }
+  testID="aniview-mock"
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 10,
+        },
+        {
+          "backgroundColor": "#eee",
+          "padding": 20,
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontFamily": "System",
+          },
+          {
+            "fontSize": 20,
+          },
+        ]
+      }
+    >
+      Main Content
+    </Text>
+    <View
+      style={
+        {
+          "backgroundColor": "rgba(0,0,0,0.1)",
+          "height": 50,
+          "width": 100,
+        }
+      }
+      testID="aniview-mock"
+    >
+      <Text>
+        Nested Item
+      </Text>
+    </View>
+  </View>
+</View>
+`;
 
-exports[`Aniview Snapshot Suite Scenario 2: Space-Between Flex with Absolute Text 1`] = `null`;
+exports[`Aniview Snapshot Suite Scenario 2: Space-Between Flex with Absolute Text 1`] = `
+<View
+  style={
+    [
+      {
+        "height": "100%",
+        "width": "100%",
+      },
+      {
+        "flexDirection": "row",
+        "justifyContent": "space-between",
+      },
+    ]
+  }
+  testID="aniview-mock"
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 10,
+        },
+        {
+          "alignItems": "flex-end",
+          "flex": 1,
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontFamily": "System",
+          },
+          {
+            "color": "blue",
+            "position": "absolute",
+            "right": 10,
+            "top": 10,
+          },
+        ]
+      }
+    >
+      Main Content
+    </Text>
+    <View
+      style={
+        {
+          "backgroundColor": "rgba(0,0,0,0.1)",
+          "height": 50,
+          "width": 100,
+        }
+      }
+      testID="aniview-mock"
+    >
+      <Text>
+        Nested Item
+      </Text>
+    </View>
+  </View>
+</View>
+`;
 
-exports[`Aniview Snapshot Suite Scenario 3: Column Reverse with Margin Auto 1`] = `null`;
+exports[`Aniview Snapshot Suite Scenario 3: Column Reverse with Margin Auto 1`] = `
+<View
+  style={
+    [
+      {
+        "height": "100%",
+        "width": "100%",
+      },
+      {
+        "flexDirection": "column-reverse",
+      },
+    ]
+  }
+  testID="aniview-mock"
+>
+  <View
+    style={
+      [
+        {
+          "borderRadius": 10,
+        },
+        {
+          "marginBottom": 20,
+          "marginTop": "auto",
+        },
+      ]
+    }
+  >
+    <Text
+      style={
+        [
+          {
+            "fontFamily": "System",
+          },
+          {
+            "fontWeight": "bold",
+            "textAlign": "center",
+          },
+        ]
+      }
+    >
+      Main Content
+    </Text>
+    <View
+      style={
+        {
+          "backgroundColor": "rgba(0,0,0,0.1)",
+          "height": 50,
+          "width": 100,
+        }
+      }
+      testID="aniview-mock"
+    >
+      <Text>
+        Nested Item
+      </Text>
+    </View>
+  </View>
+</View>
+`;

@@ -69,6 +69,8 @@ export function useAniview(props?: AniviewProps): AniviewContextType | AniviewLo
     lock: context.lock,
     visiblePages: context.visiblePages,
     isMoving: context.isMoving,
+    parentGestureRef: context.parentGestureRef,
+    currentPageSV: context.currentPageSV,
   };
 
   return logic;

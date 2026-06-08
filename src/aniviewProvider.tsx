@@ -3,7 +3,7 @@ import { LayoutChangeEvent, View, Dimensions as RNDimensions, LayoutRectangle } 
 import Animated, { useSharedValue, withSpring, makeMutable, SharedValue, WithSpringConfig } from 'react-native-reanimated';
 import { AniviewContext, AniviewContextType, AniviewHandle, AniviewFrame, BakedFrame, IAniviewConfig, WorldBounds } from "./useAniviewContext";
 import { AniviewConfig } from './aniviewConfig';
-import { GestureDetector, PanGesture } from 'react-native-gesture-handler';
+import { GestureDetector, PanGesture, GestureType } from 'react-native-gesture-handler';
 import * as AniviewMath from './core/AniviewMath';
 
 export interface AniviewProviderProps {
@@ -35,7 +35,7 @@ export interface AniviewProviderProps {
   /** External gesture enabled control (simple on/off) */
   gestureEnabled?: SharedValue<boolean>;
   /** Simultaneous gesture handlers for coordination */
-  simultaneousHandlers?: any;
+  simultaneousHandlers?: React.RefObject<GestureType> | React.RefObject<GestureType>[];
 }
 
 /**
@@ -79,6 +79,7 @@ export interface AniviewProviderProps {
  * @param props.gestureEnabled - SharedValue to globally enable/disable the pan gesture.
  * @param props.simultaneousHandlers - RNGH refs for gesture coordination with parent/sibling handlers.
  * @param props.activePage - (Legacy) Declarative page control. Prefer `ref.snapToPage()`.
+ * @returns Provider wrapper that exposes Aniview context and root pan gesture.
  *
  * @example
  * ```tsx
@@ -115,6 +116,13 @@ export const AniviewProvider = forwardRef<AniviewHandle, AniviewProviderProps>((
     return new AniviewConfig([[1]], 0, pageMap, {}, {}, {}); // Fallback
   }, [providedConfig, layout, defaultPage, pageMap]);
 
+  // --- GESTURE REF FOR CHILD COORDINATION ---
+  // Create an internal ref for the gesture so child components can access it
+  // via useAniview().parentGestureRef for simultaneousWithExternalGesture.
+  const internalGestureRef = useRef<GestureType>(null);
+  // If the consumer provided a gestureRef, reuse it; otherwise use the internal one.
+  const parentGestureRef = gestureRef || internalGestureRef;
+
   // --- STATE & PHYSICS ---
   const x = useSharedValue(0);
   const y = useSharedValue(0);
@@ -142,14 +150,20 @@ export const AniviewProvider = forwardRef<AniviewHandle, AniviewProviderProps>((
   // every Aniview component from re-rendering on every page traversal.
   const visiblePagesRef = useRef<Set<number>>(new Set([config.resolvePageId(defaultPage)]));
 
+  /**
+   * Computes near-page visibility set around a center page.
+   *
+   * @param centerPage - Current snapped or targeted center page.
+   * @returns void
+   */
   const updateVisibility = (centerPage: number | string) => {
     const visible = new Set<number>();
     const pages = config.getPages();
     const resolvedCenter = config.resolvePageId(centerPage);
-    const centerPos = AniviewMath.pageIdToMatrixPos(resolvedCenter, (config as any).layout);
+    const centerPos = AniviewMath.pageIdToMatrixPos(resolvedCenter, config.layout);
 
     pages.forEach((p: number) => {
-        const pPos = AniviewMath.pageIdToMatrixPos(p, (config as any).layout);
+        const pPos = AniviewMath.pageIdToMatrixPos(p, config.layout);
         const rowDist = Math.abs(pPos.r - centerPos.r);
         const colDist = Math.abs(pPos.c - centerPos.c);
         if (rowDist <= 1 && colDist <= 1) visible.add(p);
@@ -200,6 +214,12 @@ export const AniviewProvider = forwardRef<AniviewHandle, AniviewProviderProps>((
   }, [dimensions, config]);
 
   // --- ONLAYOUT AUTO-SIZING ---
+  /**
+   * Tracks provider container layout and updates dimensions when changed.
+   *
+   * @param e - Native layout event from the provider stage view.
+   * @returns void
+   */
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height, x: layoutX, y: layoutY } = e.nativeEvent.layout;
     
@@ -279,9 +299,7 @@ export const AniviewProvider = forwardRef<AniviewHandle, AniviewProviderProps>((
     );
   }, [config, x, y, lockMask, onPageChange, dimensions, isMoving]); // Force rebuild when dimensions hit bitumen
 
-  if (gestureRef) {
-    (panGesture as any).ref = gestureRef;
-  }
+  (panGesture as any).ref = parentGestureRef;
 
   const contextValue = useMemo(() => ({
     dimensions,
@@ -291,8 +309,10 @@ export const AniviewProvider = forwardRef<AniviewHandle, AniviewProviderProps>((
     config,
     lock: (mask: number) => { lockMask.value = mask; },
     visiblePages: visiblePagesRef.current,
-    isMoving
-  }), [dimensions, x, y, externalEvents, activationMap, config, panGesture, lockMask]);
+    isMoving,
+    parentGestureRef,
+    currentPageSV: lastTargetId,
+  }), [dimensions, x, y, externalEvents, activationMap, config, panGesture, lockMask, parentGestureRef]);
 
   return (
     <AniviewContext.Provider value={contextValue}>

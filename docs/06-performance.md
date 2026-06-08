@@ -95,13 +95,13 @@ Properties in `style` that don't appear in any frame are **never interpolated**.
 
 The bake runs inside `useMemo`. If its dependencies change, it re-bakes. Avoid creating new `style` objects on every render:
 
-**❌ Re-bakes every render:**
+**Avoid: re-bakes every render**
 
 ```tsx
 <Aniview style={{ width: 100, backgroundColor: "red" }} />
 ```
 
-**✅ Stable — bakes once:**
+**Prefer: stable input bakes once**
 
 ```tsx
 const stableStyle = useMemo(() => ({ width: 100, backgroundColor: "red" }), []);
@@ -130,10 +130,10 @@ const styles = StyleSheet.create({
 Only pass events to `AniviewProvider` that are actually consumed by frames:
 
 ```tsx
-// ❌ Passing unused events
+// Avoid passing unused events
 <AniviewProvider events={{ scrollY, zoom, rotation, tilt }}>
 
-// ✅ Only what's needed
+// Pass only what is needed
 <AniviewProvider events={{ scrollY }}>
 ```
 
@@ -147,14 +147,14 @@ Aniview modulates event-driven animations by **presence** — a value from 0 to 
 
 This means you don't need to manually gate event effects. A scroll-linked header on Page 0 won't "leak" its scroll offset into Page 1's layout.
 
-If you need an event to stay active even when far from the home page, use `persistent: true` on the event frame:
+If you need an event to stay active even when far from the home page, use `eventPersistent: true` on the event frame:
 
 ```tsx
 frames={{
   scrolled: {
     event: 'scrollY',
     value: 100,
-    persistent: true, // Effect stays active on all pages
+    eventPersistent: true, // Effect stays active on all pages
     style: { opacity: 0.5 },
   },
 }}

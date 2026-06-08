@@ -5,3 +5,4 @@
 
 // Silence console.log/warn/error if desired, or setup global variables.
 global.__DEV__ = true;
+global.IS_REACT_ACT_ENVIRONMENT = true;

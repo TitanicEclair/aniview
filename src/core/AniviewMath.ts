@@ -1,7 +1,5 @@
 /**
- * ANIVIEW MATH CORE
- * 
- * Pure functional implementation of Aniview's spatial logic.
+ * Pure spatial math helpers used by config, gesture, and bake flows.
  */
 
 export interface MatrixPos {
@@ -17,7 +15,11 @@ export interface WorldBounds {
 }
 
 /**
- * Converts a linear PageID to a (Row, Column) matrix position.
+ * Converts a linear page id to matrix row/column indices.
+ *
+ * @param pageId - Numeric page id.
+ * @param layout - Active layout matrix.
+ * @returns Matrix position for the page id, or sentinel out-of-range values.
  */
 export function pageIdToMatrixPos(pageId: number, layout: number[][]): MatrixPos {
   'worklet';
@@ -36,7 +38,13 @@ export function pageIdToMatrixPos(pageId: number, layout: number[][]): MatrixPos
 }
 
 /**
- * Calculates the displacement between two indices on an axis, accounting for overlaps.
+ * Calculates axis displacement between two indices while honoring overlap ratios.
+ *
+ * @param from - Origin index.
+ * @param to - Target index.
+ * @param size - Axis size in pixels.
+ * @param overlaps - Per-gap overlap ratios for the axis.
+ * @returns Signed axis displacement.
  */
 export function calculateAxisOffset(
   from: number, 
@@ -58,7 +66,15 @@ export function calculateAxisOffset(
 }
 
 /**
- * Calculates the (x, y) coordinates of a page relative to a default origin page.
+ * Computes world-space offset for a page relative to a default origin page.
+ *
+ * @param pageId - Target page id.
+ * @param layout - Active layout matrix.
+ * @param contextDims - Viewport dimensions.
+ * @param defaultPage - Origin page id.
+ * @param rowOverlaps - Row overlap ratios.
+ * @param colOverlaps - Column overlap ratios.
+ * @returns `{ x, y }` world offset for the target page.
  */
 export function getPageOffset(
   pageId: number,
@@ -79,7 +95,15 @@ export function getPageOffset(
 }
 
 /**
- * Calculates the absolute boundaries of the virtual world.
+ * Computes min/max world bounds across all active pages.
+ *
+ * @param pages - Active page ids.
+ * @param layout - Active layout matrix.
+ * @param contextDims - Viewport dimensions.
+ * @param defaultPage - Origin page id.
+ * @param rowOverlaps - Row overlap ratios.
+ * @param colOverlaps - Column overlap ratios.
+ * @returns World boundary extents.
  */
 export function getWorldBounds(
   pages: number[],
