@@ -419,10 +419,10 @@ describe("Aniview Navigation", () => {
 ### 1. Test Behavior, Not Implementation
 
 ```typescript
-// ❌ Don't test internal bake structure
+// Avoid testing internal bake structure
 expect(baked.bakedH[0].values).toBeDefined();
 
-// ✅ Test observable behavior
+// Test observable behavior
 expect(component.props.style.opacity).toBe(0);
 ```
 
@@ -442,9 +442,9 @@ describe('Page Transition', () => {
 
 Only mock what's necessary:
 
-- ✅ Reanimated (unavoidable in Jest)
-- ✅ Gesture Handler (unavoidable in Jest)
-- ❌ Aniview internals (test the real thing)
+- Mock Reanimated. It is unavoidable in Jest.
+- Mock Gesture Handler. It is unavoidable in Jest.
+- Do not mock Aniview internals. Test the real package behavior.
 
 ### 4. Test Edge Cases
 

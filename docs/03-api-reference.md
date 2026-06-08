@@ -9,11 +9,14 @@ title: API Reference
 This page documents the public API exported from `src/index.ts`.
 
 ```ts
-export { default as Aniview } from "aniview";
-export { AniviewProvider } from "aniview";
-export { AniviewConfig } from "aniview";
-export { useAniview } from "aniview";
-export { useAniviewLock, AniviewLock } from "aniview";
+import {
+  Aniview,
+  AniviewProvider,
+  AniviewConfig,
+  useAniview,
+  useAniviewLock,
+  AniviewLock,
+} from "aniview";
 ```
 
 ## AniviewProvider

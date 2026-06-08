@@ -100,7 +100,6 @@ Swipe horizontally to move between `HOME` and `PROFILE`. The badge belongs to `H
 
 ## Documentation
 
-- [Documentation System](docs/00-documentation-system.md) - How these docs are organized and kept accurate
 - [Getting Started](docs/01-getting-started.md) - Installation and first working app
 - [Core Concepts](docs/02-core-concepts.md) - Coordinate space, pages, frames, baking, and virtualization
 - [API Reference](docs/03-api-reference.md) - Public components, hooks, methods, and types
@@ -110,6 +109,7 @@ Swipe horizontally to move between `HOME` and `PROFILE`. The badge belongs to `H
 - [Testing](docs/07-testing.md) - Testing Aniview logic and components
 - [Gesture Control](docs/08-gesture-control.md) - Gesture toggles, locks, and simultaneous handlers
 - [Reporting Issues](docs/09-reporting-issues.md) - Bug reports and feature requests
+- [Local Development](LOCAL_DEV.md) - Using a local checkout from a React Native app
 
 ## Mental Model
 

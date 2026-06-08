@@ -5,7 +5,7 @@
 Aniview provides built-in gesture control for page navigation. For complex UIs with nested scroll views, buttons, or custom gestures, you can control how Aniview's pan gesture behaves using two mechanisms:
 
 1. **`gestureEnabled`** — Simple on/off toggle
-2. **`externalLockMask`** — Axis-specific control (lock horizontal, vertical, or both independently)
+2. **`externalLockMask`** — Directional control for blocking left, right, up, or down page movement
 
 ---
 
@@ -15,7 +15,6 @@ Pass a `SharedValue<boolean>` to `AniviewProvider` to globally enable/disable An
 
 ```tsx
 import { useSharedValue } from "react-native-reanimated";
-import { AniviewLock } from "aniview";
 
 const gestureEnabled = useSharedValue(true);
 
@@ -29,11 +28,9 @@ Then toggle it from any child component:
 ```tsx
 <Pressable
   onPressIn={() => {
-    "worklet";
     gestureEnabled.value = false;
   }}
   onPressOut={() => {
-    "worklet";
     gestureEnabled.value = true;
   }}
 >
@@ -43,10 +40,10 @@ Then toggle it from any child component:
 
 ### When to Use
 
-- ✅ Buttons/Pressables (prevent accidental swipes while pressing)
-- ✅ Modals/Bottom Sheets (disable background navigation)
-- ✅ Long-press interactions
-- ✅ Any "disable all panning" scenario
+- Buttons and pressable controls that should not trigger page swipes.
+- Modals and bottom sheets that should disable background navigation.
+- Long-press interactions.
+- Any case where all Aniview page panning should be disabled temporarily.
 
 ---
 
@@ -78,11 +75,9 @@ Use `AniviewLock.mask(...)` instead of hand-writing masks when possible.
 ```tsx
 <ScrollView
   onScrollBeginDrag={() => {
-      "worklet";
     lockMask.value = AniviewLock.mask({ left: true, right: true });
   }}
   onScrollEndDrag={() => {
-    "worklet";
     lockMask.value = 0;
   }}
 >
@@ -92,9 +87,9 @@ Use `AniviewLock.mask(...)` instead of hand-writing masks when possible.
 
 ### When to Use
 
-- ✅ Nested ScrollViews (block Aniview on one axis, allow the other)
-- ✅ Custom gestures that conflict with specific axes
-- ✅ Complex multi-directional interactions
+- Nested scroll views where one movement direction should belong to the child.
+- Custom gestures that conflict with specific page movement directions.
+- Complex multi-directional interactions.
 
 ---
 
@@ -130,22 +125,24 @@ This allows `myGesture` to run **simultaneously** with Aniview's internal pan ge
 
 ## Comparison
 
-| Scenario            | Use `gestureEnabled` | Use `lockMask`       |
-| ------------------- | -------------------- | -------------------- |
-| Button press-drag   | ✅                   | ❌                   |
-| Modal open          | ✅                   | ❌                   |
-| Vertical ScrollView | No | Yes, lock left and right |
-| Horizontal FlatList | No | Yes, lock up and down |
-| Tutorial/Onboarding | Yes | No |
-| Pinch zoom active   | Yes | No |
+| Scenario | Recommended control |
+| --- | --- |
+| Button press-drag | `gestureEnabled` |
+| Modal open | `gestureEnabled` |
+| Vertical `ScrollView` | `externalLockMask`, lock `left` and `right` |
+| Horizontal `FlatList` | `externalLockMask`, lock `up` and `down` |
+| Tutorial or onboarding step | `gestureEnabled` |
+| Pinch zoom active | `gestureEnabled` |
 
 ---
 
 ## Complete Example
 
 ```tsx
+import React from "react";
+import { Pressable, ScrollView, Text } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
-import { AniviewLock, AniviewProvider, AniviewConfig } from "aniview";
+import { AniviewLock, AniviewProvider } from "aniview";
 
 function MyApp() {
   const gestureEnabled = useSharedValue(true);
@@ -153,7 +150,7 @@ function MyApp() {
 
   return (
     <AniviewProvider
-      config={config}
+      layout={[[1, 1]]}
       gestureEnabled={gestureEnabled}
       externalLockMask={lockMask}
     >
@@ -192,8 +189,7 @@ function MyApp() {
 1. **Prefer `gestureEnabled` for simple cases** — clearer intent
 2. **Use `lockMask` only when you need axis-specific control**
 3. **Always release locks** — add `onPressOut`, `onScrollEndDrag`, etc.
-4. **Use the worklet directive** — all SharedValue mutations in gesture/scroll callbacks should be in worklets
-5. **Test on real devices** — gesture behavior can differ from simulator
+4. **Test on real devices** — gesture behavior can differ from simulator
 
 ---
 

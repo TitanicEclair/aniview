@@ -1,25 +1,25 @@
 ---
-id: documentation-system
-slug: /documentation-system
-title: Documentation System
+id: documentation-maintenance
+slug: /documentation-maintenance
+title: Documentation Maintenance
 ---
 
-# Documentation System
+# Documentation Maintenance
 
-This page defines how Aniview documentation should stay useful and accurate as the library changes.
+This page defines how Aniview documentation should stay useful and accurate as the library changes. It is intended for maintainers and contributors, not as an introduction for package users.
 
 ## Structure
 
-Aniview uses a Diataxis-style documentation structure:
+Aniview documentation is organized by reader intent:
 
 | Type | Reader question | Aniview pages |
 | --- | --- | --- |
-| Tutorial | How do I get something working? | Getting Started |
-| How-to guide | How do I solve a specific problem? | Advanced Patterns, Examples, Gesture Control, Testing |
-| Reference | What exactly is available? | API Reference |
-| Explanation | How does this system work? | Core Concepts, Performance Guide |
+| Getting started | How do I get a working setup quickly? | Getting Started |
+| Task guides | How do I solve a specific problem? | Advanced Patterns, Examples, Gesture Control, Testing |
+| API details | What exactly is available? | API Reference |
+| Concept guides | How does this system work? | Core Concepts, Performance Guide |
 
-Avoid mixing these purposes. For example, API Reference should be terse and complete; Core Concepts can explain tradeoffs; Getting Started should keep moving and avoid implementation detail.
+Avoid mixing these purposes. API Reference should be terse and complete. Core Concepts can explain tradeoffs. Getting Started should keep moving and avoid implementation detail.
 
 ## Accuracy Rules
 
