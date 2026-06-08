@@ -1,12 +1,12 @@
-# Local Development Setup
+# Local Development
 
-When developing aniview alongside a consumer app, use a `file:` dependency
+When developing Aniview alongside a consumer app, use a `file:` dependency
 to link the local copy. This requires a Metro config in the consumer app
 to prevent duplicate native module instances.
 
 ## Consumer App Setup
 
-**1. Link to local aniview** (`package.json`):
+**1. Link to local Aniview** in the consumer app `package.json`:
 
 ```json
 "aniview": "file:../aniview"
@@ -48,8 +48,8 @@ module.exports = config;
 
 ## Why This Is Needed
 
-Without the Metro config, `file:../aniview` exposes aniview's `node_modules/`
-to Metro. Since aniview has its own copies of `react-native-reanimated` and
+Without the Metro config, `file:../aniview` exposes Aniview's `node_modules/`
+to Metro. Since Aniview has its own development copies of `react-native-reanimated` and
 `react-native-worklets`, Metro bundles two instances — causing runtime errors:
 
 - `TypeError: property is not writable`
@@ -61,10 +61,10 @@ The `blockList` prevents Metro from crawling aniview's `node_modules`, and
 
 ## Reverting for Production
 
-Before publishing the consumer app, change `package.json` back:
+Before publishing the consumer app, change its `package.json` back to the npm package:
 
 ```json
-"aniview": "^1.0.0"
+"aniview": "^1.0.1"
 ```
 
 And remove `metro.config.js` (or keep it — it's harmless with the npm version).

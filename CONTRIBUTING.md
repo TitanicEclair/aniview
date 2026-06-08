@@ -1,79 +1,23 @@
 # Contributing to Aniview
 
-First off, thank you for considering contributing to Aniview! It's people like you that make Aniview such a great tool.
+Thanks for helping improve Aniview. This project is a React Native library, so useful contributions usually fall into one of four categories: runtime behavior, gesture coordination, animation/style baking, and documentation accuracy.
 
-## Code of Conduct
+## Before You Start
 
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code.
-
-## How Can I Contribute?
-
-### Reporting Bugs
-
-Before creating bug reports, please check existing issues to avoid duplicates. When creating a bug report, include:
-
-- **Clear title** - Descriptive and specific
-- **Steps to reproduce** - Minimal reproducible example
-- **Expected behavior** - What should happen
-- **Actual behavior** - What actually happens
-- **Environment** - OS, React Native version, Aniview version
-- **Screenshots/Videos** - If applicable
-
-**Example:**
-
-```markdown
-## Bug: Colors turn gray during fade-out
-
-### Steps to Reproduce
-
-1. Create Aniview with backgroundColor: 'white'
-2. Add frame with page transition to transparent
-3. Swipe to navigate
-4. Observe gray flash during transition
-
-### Expected
-
-Clean fade from white to transparent
-
-### Actual
-
-Midpoint shows gray color
-
-### Environment
-
-- iOS 17
-- React Native 0.73
-- Aniview 2.0.1
-```
-
-### Suggesting Enhancements
-
-Enhancement suggestions are tracked as GitHub issues. When creating an enhancement suggestion, include:
-
-- **Use case** - Why is this needed?
-- **Proposed solution** - How should it work?
-- **Alternatives considered** - Other approaches?
-- **Examples** - Code samples if applicable
-
-### Pull Requests
-
-1. **Fork the repo** and create your branch from `main`
-2. **Make your changes** following the coding standards
-3. **Add tests** if you've added code
-4. **Update documentation** if you've changed APIs
-5. **Ensure tests pass** - Run `npm test`
-6. **Run linter** - `npm run lint`
-7. **Submit PR** with clear description
+- Check existing issues and pull requests before opening a duplicate.
+- Keep changes focused. A small fix with tests is easier to review than a broad refactor.
+- Update documentation when public behavior, props, exports, installation steps, or examples change.
+- Do not include dependency lockfile churn unless the dependency change is intentional.
 
 ## Development Setup
 
 ### Prerequisites
 
-- Node.js >= 18
-- npm >= 9
-- React Native development environment
+- Node.js 18 or newer
+- npm 9 or newer
+- A React Native development environment if you are testing inside an app
 
-### Installation
+### Install
 
 ```bash
 git clone https://github.com/TitanicEclair/aniview.git
@@ -81,287 +25,145 @@ cd aniview
 npm install
 ```
 
-### Project Structure
+### Local Consumer App Testing
 
+When testing Aniview from another React Native app, use the local development guide:
+
+```text
+LOCAL_DEV.md
 ```
+
+That guide explains how to use a `file:` dependency without bundling duplicate copies of React Native, Reanimated, Gesture Handler, or Worklets.
+
+## Project Structure
+
+```text
 aniview/
 ├── src/
-│   ├── Aniview.tsx           # Main component
-│   ├── aniviewProvider.tsx   # Context provider
-│   ├── aniviewConfig.tsx     # Configuration engine
-│   ├── useAniview.tsx        # Hooks
-│   └── core/
-│       └── AniviewMath.ts    # Mathematical utilities
-├── docs/                     # Documentation
-├── examples/                 # Example apps
-└── __tests__/               # Test suite
+│   ├── Aniview.tsx              # Main animated view
+│   ├── aniviewProvider.tsx      # Provider, camera, gestures, context
+│   ├── aniviewConfig.tsx        # Page layout and navigation config
+│   ├── useAniview.tsx           # Context/component hook
+│   ├── useAniviewLock.tsx       # Gesture lock helper
+│   ├── useAniviewContext.tsx    # Public types and context
+│   └── core/                    # Baking, style, color, gesture, math logic
+├── src/__tests__/               # Jest tests
+├── __mocks__/                   # Jest mocks for native dependencies
+├── docs/                        # Markdown documentation
+├── website/                     # Docusaurus documentation site
+├── README.md
+├── CHANGELOG.md
+└── LOCAL_DEV.md
 ```
 
-### Running Tests
+## Commands
 
 ```bash
-npm test              # Run all tests
-npm test -- --watch   # Watch mode
-npm test -- --coverage # Coverage report
+npm test          # Run Jest
+npm run build     # Build distributable TypeScript output
+npm run lint      # Type-check without emitting files
 ```
 
-### Building
+For the Docusaurus site:
 
 ```bash
-npm run build         # Compile TypeScript
-npm run lint          # Check code style
-npm run typecheck     # Type validation
+cd website
+npm install
+npm run build
 ```
 
-### Testing Architecture
+## Pull Requests
 
-Aniview uses **Jest** for unit testing. Since the library relies on native modules (`react-native-reanimated`, `react-native-gesture-handler`) which are written in C++ and don't run in Node.js, we use **Manual Mocks** to prevent crashes during tests.
+1. Create your branch from the current development branch.
+2. Make the smallest change that solves the problem.
+3. Add or update tests for behavior changes.
+4. Update docs for public API or behavior changes.
+5. Run `npm test`, `npm run build`, and `npm run lint`.
+6. If docs changed, run `npm run build` inside `website/`.
+7. Open a pull request with a clear summary and verification steps.
 
-- **`__mocks__/`**: Contains fake implementations of native libraries.
-- **`jest.config.js`**: Maps imports to these mocks automatically.
-- **`tsx`**: Used to transform TypeScript files on the fly.
+## Testing Guidance
 
-If you add new native dependencies, you may need to add a mock in `__mocks__/`.
+Aniview uses Jest with manual mocks for native React Native dependencies:
 
-### CI/CD Pipeline
+- `__mocks__/react-native.js`
+- `__mocks__/react-native-reanimated.js`
+- `__mocks__/react-native-gesture-handler.js`
 
-This repository uses **GitHub Actions** for Continuous Integration.
+Test observable behavior, not private implementation details. Prefer tests around:
 
-- **Triggers**: Pushes to `main` and all Pull Requests.
-- **Jobs**:
-  - `lint`: Runs `npm run lint` to check for TypeScript errors.
-  - `test`: Runs `npm test` to verify logic.
+- page offset and layout calculations
+- frame baking output for spatial and event frames
+- color interpolation behavior
+- lock-mask behavior
+- snapshot stability for the rendered animated layout
 
-**Note**: The pipeline must pass before changes can be merged.
-
-## Coding Standards
-
-### TypeScript Style
-
-```typescript
-// ✅ Good
-interface AniviewFrame {
-  page?: number | string;
-  style?: ViewStyle;
-}
-
-function calculateOffset(pageId: number): { x: number; y: number } {
-  // ...
-}
-
-// ❌ Bad
-interface aniview_frame {
-  // Use PascalCase
-  page?: any; // Avoid 'any'
-}
-
-function calc_offset(p) {
-  // Use camelCase, add types
-  // ...
-}
-```
-
-### Component Patterns
-
-```tsx
-// ✅ Good: Functional component with explicit types
-interface MyComponentProps {
-  pageId: number;
-  onPress?: () => void;
-}
-
-export function MyComponent({ pageId, onPress }: MyComponentProps) {
-  // ...
-}
-
-// ❌ Bad: Default export, implicit types
-export default function MyComponent(props: any) {
-  // ...
-}
-```
-
-### Worklet Usage
-
-```typescript
-// ✅ Good: Explicit 'worklet' directive
-const animatedStyle = useAnimatedStyle(() => {
-  "worklet";
-  return { opacity: value.value };
-});
-
-// ❌ Bad: Missing 'worklet'
-const animatedStyle = useAnimatedStyle(() => {
-  return { opacity: value.value };
-});
-```
-
-### Comments
-
-```typescript
-// ✅ Good: Explain WHY, not WHAT
-// Pre-compute lanes to avoid O(n) search on every frame
-const lanes = buildLanes(grid);
-
-// ❌ Bad: Redundant
-// Build lanes
-const lanes = buildLanes(grid);
-```
+If a change affects native gesture behavior, also verify it in a real React Native app.
 
 ## Documentation Standards
 
-### JSDoc for Public APIs
+Documentation should be accurate, runnable, and package-oriented.
 
-````typescript
-/**
- * Calculates the world coordinate offset for a given page.
- *
- * @param pageId - Numeric page ID or semantic string name
- * @param dims - Current viewport dimensions
- * @returns Object containing x and y offset in pixels
- *
- * @example
- * ```tsx
- * const offset = config.getPageOffset('HOME', dimensions);
- * // => { x: 0, y: 0 }
- * ```
- */
-public getPageOffset(
-  pageId: number | string,
-  dims: Dimensions
-): { x: number; y: number } {
-  // ...
-}
-````
+- Installation instructions must match `package.json` peer dependencies.
+- Examples must import every symbol they use.
+- Public API docs must match `src/index.ts` exports and the public TypeScript interfaces.
+- `docs/` and `website/docs/` should stay in sync.
+- Keep maintainer-only process details out of the first user-facing docs path.
+- Do not document internal caches, private helpers, or performance behavior as stable public contracts.
 
-### Markdown Documentation
+When changing public behavior, check at least:
 
-- Use **clear headings** (H1 for title, H2 for sections)
-- Include **code examples** for every feature
-- Provide **before/after** comparisons
-- Add **visual diagrams** where helpful
+- `README.md`
+- `docs/01-getting-started.md`
+- `docs/03-api-reference.md`
+- `docs/08-gesture-control.md` if gestures or locks changed
+- `CHANGELOG.md`
+- matching files under `website/docs/`
 
-## Testing Guidelines
+## Coding Standards
 
-### Test Coverage Requirements
+Use TypeScript types for public and shared functions. Avoid broad `any` unless the value crosses a React Native/Reanimated boundary where the exact type is not practical.
 
-- **Core logic**: 90%+ coverage
-- **Components**: 80%+ coverage
-- **Utilities**: 95%+ coverage
+Prefer small, focused helpers in `src/core/` for logic that can be tested without rendering React components.
 
-### Test Structure
-
-```typescript
-describe("AniviewConfig", () => {
-  // Setup
-  const dims = { width: 430, height: 932, offsetX: 0, offsetY: 0 };
-
-  describe("getPageOffset", () => {
-    it("should return origin for page 0", () => {
-      const config = new AniviewConfig([[1]], 0);
-      expect(config.getPageOffset(0, dims)).toEqual({ x: 0, y: 0 });
-    });
-
-    it("should calculate horizontal offset", () => {
-      const config = new AniviewConfig([[1, 1]], 0);
-      expect(config.getPageOffset(1, dims)).toEqual({ x: 430, y: 0 });
-    });
-  });
-});
-```
-
-### Test Best Practices
-
-- ✅ Test **behavior**, not implementation
-- ✅ Use **descriptive test names**
-- ✅ Keep tests **isolated** (no shared state)
-- ✅ Mock **only** external dependencies
-- ❌ Don't test **internal** implementation details
+Comments should explain why a non-obvious implementation exists. Avoid comments that restate the line below them.
 
 ## Performance Considerations
 
-### Benchmarking
+Aniview is designed around precomputed animation data and Reanimated worklets. Performance-sensitive changes should avoid:
 
-If your change affects performance, include benchmarks:
+- repeated frame searches on every render
+- unnecessary style parsing in animated worklets
+- extra React re-renders during camera movement
+- preventable remounting of persistent animated surfaces
 
-```typescript
-const start = performance.now();
-for (let i = 0; i < 1000; i++) {
-  myOptimizedFunction();
-}
-const duration = performance.now() - start;
-console.log(`Average: ${duration / 1000}ms`);
-```
+If a change affects baking, interpolation, gestures, or virtualization, include a short note in the PR explaining the performance impact.
 
-### Performance Checklist
+## Commit Messages
 
-- [ ] Avoid O(n²) or worse algorithms
-- [ ] Minimize worklet allocations
-- [ ] Pre-compute where possible
-- [ ] Use `useMemo` for expensive calculations
-- [ ] Profile with React DevTools before/after
+Use clear conventional-style prefixes where they fit:
 
-## Git Commit Messages
-
-### Format
-
-```
-type(scope): subject
-
-body (optional)
-
-footer (optional)
-```
-
-### Types
-
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only
-- `style`: Code style (formatting, no logic change)
-- `refactor`: Code restructure (no feature/fix)
-- `perf`: Performance improvement
-- `test`: Adding or updating tests
-- `chore`: Build process, dependencies, etc.
-
-### Examples
-
-```
-feat(color): implement smart color interpolation
-
-Prevents gray flash when transitioning from solid colors to transparent
-by dynamically adjusting RGB channels while keeping alpha at 0.
-
-Closes #42
-```
-
-```
-fix(gesture): prevent diagonal navigation locks
-
-When swiping slightly off-axis, the wrong axis could get locked.
-Added minimum translation threshold before axis locking.
-
-Fixes #67
+```text
+feat: add event frame behavior
+fix: correct directional lock mask
+docs: update gesture guide
+test: cover transparent color interpolation
+refactor: split style baking helpers
+chore: update build configuration
 ```
 
 ## Release Process
 
-Maintainers will handle releases. The process:
+Maintainers handle releases.
 
-1. Update `CHANGELOG.md`
-2. Bump version in `package.json`
-3. Create git tag `vX.Y.Z`
-4. Publish to npm
-5. Create GitHub release
-
-## Community
-
-- **GitHub Discussions**: [Ask questions](https://github.com/TitanicEclair/aniview/discussions)
-- **GitHub Issues**: [Report bugs](https://github.com/TitanicEclair/aniview/issues)
+1. Update `CHANGELOG.md`.
+2. Bump `package.json` and `package-lock.json`.
+3. Run `npm test`, `npm run build`, and `npm run lint`.
+4. Build the website if documentation changed.
+5. Create a git tag, for example `v1.0.2`.
+6. Publish to npm.
+7. Create or update the GitHub release notes.
 
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
-
----
-
-Thank you for contributing to Aniview! 🎉

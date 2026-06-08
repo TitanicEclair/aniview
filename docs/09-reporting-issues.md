@@ -27,7 +27,7 @@ What actually happens. Include screenshots or screen recordings if possible.
 
 - OS: [iOS 17 / Android 14 / etc.]
 - React Native: [0.73 / 0.74 / etc.]
-- Aniview: [1.0.0]
+- Aniview: [1.0.1]
 - react-native-reanimated: [4.1.1]
 - react-native-gesture-handler: [2.28.0]
 - Expo SDK: [54 / N/A]
@@ -79,5 +79,5 @@ Before filing, check if your issue matches one of these:
 
 ## See Also
 
-- [Contributing Guidelines](https://github.com/TitanicEclair/aniview/blob/main/CONTRIBUTING.md) — How to submit fixes and features
+- [Contributing Guidelines](https://github.com/TitanicEclair/aniview/blob/main/CONTRIBUTING.md) - How to submit fixes and features
 - [Testing Guide](07-testing.md) — How to test your Aniview components
