@@ -21,7 +21,6 @@ export const AniviewLock = {
      * @returns Numeric lock mask.
      */
     mask: (directions: AniviewAxisLock) => {
-        'worklet';
         let mask = 0;
         if (directions.left) mask |= 1;
         if (directions.right) mask |= 2;

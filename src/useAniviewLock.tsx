@@ -20,7 +20,6 @@ export function useAniviewLock() {
      * @returns void
      */
     const lockDirections = (directions: AniviewAxisLock) => {
-        'worklet';
         if (context) {
             context.lock(AniviewLock.mask(directions));
         }
@@ -32,7 +31,6 @@ export function useAniviewLock() {
      * @returns void
      */
     const unlock = () => {
-        'worklet';
         if (context) {
             context.lock(0);
         }
