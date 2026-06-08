@@ -1,5 +1,5 @@
 import * as React from 'react';
-import * as renderer from 'react-test-renderer';
+import renderer, { act } from 'react-test-renderer';
 import { View, Text, StyleSheet } from 'react-native';
 
 // Mock Reanimated
@@ -8,15 +8,11 @@ jest.mock('react-native-reanimated', () => {
     return Reanimated;
 });
 
-// Mock Aniview component to verify layout logic
-jest.mock('../Aniview', () => {
-  const { View } = require('react-native');
-  return jest.fn((props: any) => {
-    return <View testID="aniview-mock" style={props.style}>{props.children}</View>;
-  });
-});
-
-import Aniview from '../Aniview';
+// Local test double: this suite validates layout composition, not the runtime
+// Aniview animation/provider contract.
+const Aniview = (props: any) => (
+  <View testID="aniview-mock" style={props.style}>{props.children}</View>
+);
 
 describe('Aniview Snapshot Suite', () => {
   
@@ -31,38 +27,39 @@ describe('Aniview Snapshot Suite', () => {
     </Aniview>
   );
 
+  const renderLayout = (props: any) => {
+    let tree: renderer.ReactTestRenderer | undefined;
+    act(() => {
+      tree = renderer.create(<TestLayout {...props} />);
+    });
+    return tree!.toJSON();
+  };
+
   it('Scenario 1: Default Center Aligned', () => {
-    const tree = renderer.create(
-      <TestLayout 
-        outerFlex={{ justifyContent: 'center', alignItems: 'center' }}
-        innerFlex={{ padding: 20, backgroundColor: '#eee' }}
-        textPos={{ fontSize: 20 }}
-      />
-    ).toJSON();
-    console.log('TREE 1:', JSON.stringify(tree)); // DEBUG
+    const tree = renderLayout({
+      outerFlex: { justifyContent: 'center', alignItems: 'center' },
+      innerFlex: { padding: 20, backgroundColor: '#eee' },
+      textPos: { fontSize: 20 },
+    });
     expect(tree).toMatchSnapshot();
   });
 
   it('Scenario 2: Space-Between Flex with Absolute Text', () => {
-    const tree = renderer.create(
-      <TestLayout 
-        outerFlex={{ justifyContent: 'space-between', flexDirection: 'row' }}
-        innerFlex={{ flex: 1, alignItems: 'flex-end' }}
-        textPos={{ position: 'absolute', top: 10, right: 10, color: 'blue' }}
-      />
-    ).toJSON();
+    const tree = renderLayout({
+      outerFlex: { justifyContent: 'space-between', flexDirection: 'row' },
+      innerFlex: { flex: 1, alignItems: 'flex-end' },
+      textPos: { position: 'absolute', top: 10, right: 10, color: 'blue' },
+    });
     expect(tree).toMatchSnapshot();
   });
 
   it('Scenario 3: Column Reverse with Margin Auto', () => {
-    const tree = renderer.create(
-        <TestLayout 
-          outerFlex={{ flexDirection: 'column-reverse' }}
-          innerFlex={{ marginTop: 'auto', marginBottom: 20 }}
-          textPos={{ textAlign: 'center', fontWeight: 'bold' }}
-        />
-      ).toJSON();
-      expect(tree).toMatchSnapshot();
+    const tree = renderLayout({
+      outerFlex: { flexDirection: 'column-reverse' },
+      innerFlex: { marginTop: 'auto', marginBottom: 20 },
+      textPos: { textAlign: 'center', fontWeight: 'bold' },
+    });
+    expect(tree).toMatchSnapshot();
   });
 });
 
