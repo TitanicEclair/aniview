@@ -5,25 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-06-09
+## [1.1.0] - 2026-06-09
 
 ### Added
 
-- Core animation baking, color interpolation, gesture, and style helpers split into focused modules under `src/core/`.
-- Regression tests for frame baking, color interpolation, lock masks, math helpers, and snapshots.
-- Local development guide for testing Aniview from a consumer React Native app with Metro module de-duplication.
+- `parentGestureRef` in context — child gesture coexistence with Aniview page swiping via `simultaneousWithExternalGesture`.
+- `currentPageSV` in context — UI-thread page awareness for worklet-driven page indicators.
+- `BakedLane` and `BakedResult` types exported for consumers.
+- `IAniviewConfig` extended with `layout`, `registerLayout`, `getLayout` methods.
+- `LOCAL_DEV.md` — guide for testing Aniview from a consumer app with Metro module de-duplication.
+- Regression tests for frame baking (12) and color interpolation (68), totaling 129 tests (up from 50).
 
 ### Changed
 
-- Refreshed README, Getting Started, Core Concepts, API Reference, Performance, Testing, Gesture Control, Reporting Issues, and Docusaurus docs to match the current public API.
-- Updated development dependencies for the current React Native/Reanimated test setup.
-- Improved snapshot test setup for the current React test renderer behavior.
-- Clarified `persistent` component mounting versus `eventPersistent` event-frame weighting.
+- **Aniview.tsx refactored from 994 to 207 lines** — color, bake, style, and gesture logic extracted to focused `src/core/` modules (`AniviewColor`, `AniviewBake`, `AniviewStyle`, `AniviewGesture`, `AniviewStyleUtils`).
+- `simultaneousHandlers` typed as `RefObject<GestureType> | RefObject<GestureType>[]` (was `any`).
+- `AniviewLock.mask()` and `useAniviewLock` helpers are now worklet-safe.
+- Deduplicated hex/hsl color parser into shared `parseColorToChannels()`.
+- `BakedLane.persistent` renamed to `eventPersistent` for clarity.
+- Dev dependencies bumped to latest: RNGH 3.0, Reanimated 4.4, Worklets 0.9.
 
 ### Fixed
 
-- Corrected directional lock-mask handling so `AniviewLock.mask({ left, right, up, down })` matches provider gesture behavior.
-- Removed stale Docusaurus/template documentation language and broken documentation links.
+- Removed most `config as any` casts (7→2, only intentional private methods remain).
+- `prepare` script handles missing Reanimated gracefully.
+- Homepage documentation links fixed on Docusaurus site.
+
+## [1.0.1] - 2026-02-22
+
+### Changed
+
+- Documentation refreshed across Getting Started, Core Concepts, API Reference, and Docusaurus site.
+- Snapshot test setup improved for current React test renderer.
+
+### Fixed
+
+- Directional lock-mask corrected to match provider gesture behavior.
 
 ## [1.0.0] - 2026-02-10
 
