@@ -542,4 +542,4 @@ jobs:
 
 - Review [Performance Guide](06-performance.md) for optimization
 - Learn about [Gesture Control](08-gesture-control.md) for complex interactions
-- Check out [Contributing Guidelines](../CONTRIBUTING.md) to help improve Aniview
+- Check out the [Contributing Guidelines](https://github.com/TitanicEclair/aniview/blob/main/CONTRIBUTING.md) to help improve Aniview

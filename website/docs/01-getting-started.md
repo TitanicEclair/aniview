@@ -6,210 +6,191 @@ title: Getting Started
 
 # Getting Started
 
+This tutorial builds a two-page React Native scene with one component that morphs as the user swipes between pages.
+
 ## Prerequisites
 
-- **Node.js** ≥ 18
-- **React Native** ≥ 0.71 (or **Expo SDK** 49+)
-- A working React Native project (Expo or bare CLI)
+- Node.js 18 or newer
+- A working React Native app
+- React Native 0.71 or newer
+- Reanimated and React Native Gesture Handler configured in your app
 
-## Installation
+## Install
 
-Install Aniview and its required peer dependencies:
+Install Aniview and its peer dependencies:
 
 ```bash
-npx expo install react-native-reanimated react-native-gesture-handler react-native-worklets
+npm install aniview react-native-reanimated react-native-gesture-handler
 ```
 
-> [!IMPORTANT]
-> If you encounter compatibility issues with `react-native-worklets`, pin it to `^0.5.1`:
->
-> ```bash
-> npx expo install react-native-worklets@0.5.1
-> ```
-
-Then install Aniview itself:
+For Expo projects:
 
 ```bash
+npx expo install react-native-reanimated react-native-gesture-handler
 npm install aniview
 ```
 
-### Configure Babel
+Add the Reanimated Babel plugin if your app does not already have it. It must be last in the plugin list:
 
-Add the Reanimated plugin to your `babel.config.js`. **It must be listed last.**
-
-```javascript
+```js
 module.exports = function (api) {
   api.cache(true);
   return {
     presets: ["babel-preset-expo"],
-    plugins: [
-      // ... other plugins
-      "react-native-reanimated/plugin", // Must be last
-    ],
+    plugins: ["react-native-reanimated/plugin"],
   };
 };
 ```
 
-### Verified Dependency Versions
+## Create a Page World
 
-The following versions are tested and confirmed working together:
-
-| Package                        | Version    |
-| ------------------------------ | ---------- |
-| `expo`                         | `~54.0.33` |
-| `react`                        | `19.1.0`   |
-| `react-native`                 | `0.81.5`   |
-| `react-native-reanimated`      | `~4.1.1`   |
-| `react-native-gesture-handler` | `~2.28.0`  |
-| `react-native-worklets`        | `^0.5.1`   |
-
-## Your First App
-
-We'll build a **2×2 grid** — four pages you can swipe between, with a circle that changes style depending on which page the camera is on.
-
-### Step 1: Define the Layout
+Aniview pages live in a 2D matrix. A `1` means the page exists; a `0` means the grid cell is empty.
 
 ```tsx
-import { AniviewConfig } from "aniview";
+const pageMap = {
+  HOME: 0,
+  PROFILE: 1,
+};
 
-const config = new AniviewConfig(
-  [
-    [1, 1], // Row 0: Home, Profile
-    [1, 1], // Row 1: Settings, Gallery
-  ],
-  0, // Start at index 0
-  {
-    HOME: 0, // (0,0) — Top Left
-    PROFILE: 1, // (0,1) — Top Right
-    SETTINGS: 2, // (1,0) — Bottom Left
-    GALLERY: 3, // (1,1) — Bottom Right
-  },
-);
+<AniviewProvider layout={[[1, 1]]} pageMap={pageMap} defaultPage="HOME">
+  {/* pages go here */}
+</AniviewProvider>
 ```
 
-### Step 2: Create Pages
+You can also construct `new AniviewConfig(...)` yourself and pass it as `config`, but the `layout` prop is enough for most apps.
 
-Each page is an `Aniview` component. The `pageId` tells Aniview where it belongs in the world.
+## Add Pages
+
+Each page is an `Aniview` with a `pageId`.
 
 ```tsx
-import { Aniview } from "aniview";
+<Aniview pageId="HOME" style={[styles.page, styles.home]}>
+  <Text style={styles.title}>Home</Text>
+</Aniview>
 
-function HomePage() {
-  return (
-    <Aniview
-      pageId="HOME"
-      style={[styles.page, { backgroundColor: "#E3F2FD" }]}
-    >
-      <Text style={styles.title}>Home</Text>
-      <Text style={styles.sub}>Swipe left → Profile</Text>
-      <Text style={styles.sub}>Swipe up → Settings</Text>
-    </Aniview>
-  );
-}
+<Aniview pageId="PROFILE" style={[styles.page, styles.profile]}>
+  <Text style={styles.title}>Profile</Text>
+</Aniview>
 ```
 
-### Step 3: Add a Morphing Component
+## Add a Morphing Component
 
-Aniview components can define `frames` — style targets that activate when the camera reaches a specific page. The engine interpolates between them automatically.
+Frames describe how a component should look at another page or event value.
 
 ```tsx
 <Aniview
   pageId="HOME"
-  style={{
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#2196F3",
-  }}
+  style={styles.badge}
   frames={{
     atProfile: {
       page: "PROFILE",
-      style: { backgroundColor: "#E91E63", transform: [{ scale: 1.5 }] },
+      style: {
+        backgroundColor: "#e91e63",
+        transform: [{ scale: 1.4 }],
+      },
     },
   }}
 />
 ```
 
-When you swipe from Home to Profile, this circle smoothly scales up and turns pink — no imperative animation code needed.
+The badge starts from `styles.badge` on `HOME`. As the camera moves toward `PROFILE`, Aniview interpolates toward the `atProfile` style.
 
-### Step 4: Assemble the App
-
-Wrap everything in `AniviewProvider` and `GestureHandlerRootView`. Be sure to place the morphing `Aniview` component as a **sibling** to the pages, not nested inside one.
+## Complete Example
 
 ```tsx
+import React from "react";
+import { Text, StyleSheet } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { AniviewProvider } from "aniview";
+import { Aniview, AniviewProvider } from "aniview";
+
+const pageMap = {
+  HOME: 0,
+  PROFILE: 1,
+};
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <AniviewProvider config={config}>
-        <View style={{ flex: 1 }}>
-          {/* Pages */}
-          <HomePage />
-          <ProfilePage />
-          <SettingsPage />
-          <GalleryPage />
+    <GestureHandlerRootView style={styles.root}>
+      <AniviewProvider layout={[[1, 1]]} pageMap={pageMap} defaultPage="HOME">
+        <Aniview pageId="HOME" style={[styles.page, styles.home]}>
+          <Text style={styles.title}>Home</Text>
+        </Aniview>
 
-          {/* Morphing Component (as Sibling) */}
-          <Aniview
-            pageId="HOME"
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: "#2196F3",
-            }}
-            frames={{
-              atProfile: {
-                page: "PROFILE",
-                style: {
-                  backgroundColor: "#E91E63",
-                  transform: [{ scale: 1.5 }],
-                },
+        <Aniview pageId="PROFILE" style={[styles.page, styles.profile]}>
+          <Text style={styles.title}>Profile</Text>
+        </Aniview>
+
+        <Aniview
+          pageId="HOME"
+          style={styles.badge}
+          frames={{
+            atProfile: {
+              page: "PROFILE",
+              style: {
+                backgroundColor: "#e91e63",
+                transform: [{ scale: 1.4 }],
               },
-            }}
-          />
-        </View>
+            },
+          }}
+        />
       </AniviewProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  page: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  home: { backgroundColor: "#e3f2fd" },
+  profile: { backgroundColor: "#fce4ec" },
+  title: { fontSize: 32, fontWeight: "700" },
+  badge: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#2196f3",
+    left: 32,
+    top: 64,
+  },
+});
 ```
 
-> **Note**: Aniview components apply transforms relative to the "World". Nesting them inside other Aniview components causes **transform summation** (double movement). See [Advanced Patterns](04-advanced-patterns.md#1-sibling-composition) for more details.
+## Programmatic Navigation
 
-Swiping works automatically — no gesture code required. For programmatic navigation, pass a `ref`:
+Use a ref when you need buttons or app state to control the camera.
 
 ```tsx
-const ref = useRef<AniviewHandle>(null);
+import React, { useRef } from "react";
+import type { AniviewHandle } from "aniview";
 
-<AniviewProvider config={config} ref={ref}>
-  ...
-  <Button onPress={() => ref.current?.snapToPage("SETTINGS")} />
-</AniviewProvider>;
+const aniviewRef = useRef<AniviewHandle>(null);
+
+<AniviewProvider
+  ref={aniviewRef}
+  layout={[[1, 1]]}
+  pageMap={pageMap}
+  defaultPage="HOME"
+>
+  {/* pages */}
+</AniviewProvider>
+
+// Later:
+aniviewRef.current?.snapToPage("PROFILE");
 ```
 
-### Complete Runnable Example
+## Composition Rule
 
-See [GettingStartedApp.tsx](../../aniview-example/GettingStartedApp.tsx) for a self-contained, runnable version of this tutorial. To try it, update your example app's `index.ts`:
+Prefer sibling `Aniview` components inside the provider. Siblings share the same world camera and each computes its own world transform.
 
-```ts
-import App from "./GettingStartedApp";
-```
-
-## Key Concepts
-
-| Concept        | Description                                                                       |
-| -------------- | --------------------------------------------------------------------------------- |
-| **Layout**     | Defined in `AniviewConfig` as a 2D grid matrix                                    |
-| **Pages**      | `Aniview` components with a `pageId`                                              |
-| **Frames**     | Style targets for specific pages or events                                        |
-| **Navigation** | Swipe works automatically; use `ref.snapToPage()` for buttons                     |
-| **Events**     | Reanimated `SharedValues` passed to `AniviewProvider` that drive frame animations |
+Nested `Aniview` components are allowed, but the transforms combine. Use nesting only when you intentionally want relative movement such as parallax.
 
 ## Next Steps
 
-- [Core Concepts](02-core-concepts.md) — Architecture and coordinate system
-- [API Reference](03-api-reference.md) — Complete props and methods
-- [Examples](05-examples.md) — Full 3×2 grid example app
+- [Core Concepts](02-core-concepts.md) explains the coordinate model.
+- [API Reference](03-api-reference.md) lists props, hooks, methods, and types.
+- [Gesture Control](08-gesture-control.md) covers nested scroll and interaction coordination.

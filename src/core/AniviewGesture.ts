@@ -56,8 +56,10 @@ const GESTURE_TUNING = {
   DISTANCE_THRESHOLD_RATIO: 0.08,
   START_FOUND_RATIO: 0.3,
   BOUNDARY_VELOCITY_DAMPING: 0.5,
-  LOCK_HORIZONTAL_BIT: 1,
-  LOCK_VERTICAL_BIT: 2,
+  LOCK_LEFT_BIT: 1,
+  LOCK_RIGHT_BIT: 2,
+  LOCK_UP_BIT: 4,
+  LOCK_DOWN_BIT: 8,
 } as const;
 
 // ── Factory ───────────────────────────────────────────
@@ -187,8 +189,12 @@ export function createPanGesture(
 
       const dx = Math.abs(gestureEvent.translationX);
       const dy = Math.abs(gestureEvent.translationY);
-      const isHBlocked = lockMask && (lockMask.value & GESTURE_TUNING.LOCK_HORIZONTAL_BIT);
-      const isVBlocked = lockMask && (lockMask.value & GESTURE_TUNING.LOCK_VERTICAL_BIT);
+      const isHBlocked = lockMask && (
+        lockMask.value & (GESTURE_TUNING.LOCK_LEFT_BIT | GESTURE_TUNING.LOCK_RIGHT_BIT)
+      );
+      const isVBlocked = lockMask && (
+        lockMask.value & (GESTURE_TUNING.LOCK_UP_BIT | GESTURE_TUNING.LOCK_DOWN_BIT)
+      );
 
       if (activeAxis.value === 0 && (dx > GESTURE_TUNING.AXIS_TRANSLATION_THRESHOLD || dy > GESTURE_TUNING.AXIS_TRANSLATION_THRESHOLD)) {
         activeAxis.value = dx > dy ? 1 : 2;
