@@ -1,3 +1,9 @@
+---
+id: core-concepts
+slug: /core-concepts
+title: Core Concepts
+---
+
 # Core Concepts
 
 ## Architecture Overview
@@ -256,35 +262,24 @@ screenY = componentWorldY - cameraY;
 
 ### The Lock System
 
-Aniview provides a **bitmask-based locking system** for gesture coordination:
+Aniview provides a bitmask-based locking system for gesture coordination. App code should usually use `useAniviewLock()` instead of hand-writing numeric masks:
 
-```typescript
-const LOCK_HORIZONTAL = 1; // 0b01
-const LOCK_VERTICAL = 2; // 0b10
-const LOCK_BOTH = 3; // 0b11
+```tsx
+import { useAniviewLock } from "aniview";
+
+function NestedScrollControls() {
+  const { lockDirections, unlock } = useAniviewLock();
+
+  return (
+    <ScrollView
+      onScrollBeginDrag={() => lockDirections({ left: true, right: true })}
+      onScrollEndDrag={unlock}
+    />
+  );
+}
 ```
 
-### Usage Pattern
-
-```typescript
-// In a child ScrollView:
-import { useAniviewLock, AniviewLock } from "aniview";
-
-const { lock } = useAniviewLock();
-
-const scrollHandler = useAnimatedScrollHandler({
-  onBegin: () => {
-    "worklet";
-    lock(AniviewLock.HORIZONTAL); // Lock Aniview's horizontal pan
-  },
-  onEnd: () => {
-    "worklet";
-    lock(AniviewLock.NONE); // Release lock
-  },
-});
-```
-
-The Aniview gesture handler **respects** these locks and prevents conflicting movements.
+Use `gestureEnabled` or `externalLockMask` on `AniviewProvider` when a parent component owns the coordination state. See [Gesture Control](08-gesture-control.md).
 
 ## Virtualization
 

@@ -6,22 +6,30 @@ export { AniviewLock };
 export type { AniviewAxisLock };
 
 /**
- * Hook to lock/unlock Aniview swipe gestures from within a child component.
- * Provides a clean API for disabling specific directions.
- * 
- * Usage:
- * const { lockDirections } = useAniviewLock();
- * lockDirections({ left: true }); // Prevent swiping left
+ * Provides directional gesture locking controls for the nearest Aniview context.
+ *
+ * @returns Lock helpers, movement state, and `AniviewLock` bitmask utility.
  */
 export function useAniviewLock() {
     const context = useContext(AniviewContext);
 
+    /**
+     * Applies a directional lock bitmask to the provider gesture.
+     *
+     * @param directions - Direction flags to lock.
+     * @returns void
+     */
     const lockDirections = (directions: AniviewAxisLock) => {
         if (context) {
             context.lock(AniviewLock.mask(directions));
         }
     };
 
+    /**
+     * Clears all active directional locks.
+     *
+     * @returns void
+     */
     const unlock = () => {
         if (context) {
             context.lock(0);

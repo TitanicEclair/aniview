@@ -4,127 +4,123 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![React Native](https://img.shields.io/badge/React%20Native-%3E%3D0.71-blue)](https://reactnative.dev/)
 
-> A high-performance, coordinate-based animation engine for React Native. Create fluid, multi-dimensional page transitions with spatial and event-driven animations.
+Aniview is a coordinate-based animation and page-navigation engine for React Native. It lets you describe a 2D page world, place components on named pages, and define style frames that interpolate as the camera moves between pages or as custom Reanimated `SharedValue`s change.
 
-## Features
+## What it is good for
 
-- **Pre-computed Animation Grid** - Zero runtime frame searches
-- **Spatial & Event-Driven** - Animate based on position OR custom events
-- **Gesture Coordination** - Built-in lock system for complex UI interactions
-- **Smart Color Interpolation** - Transparent-aware color transitions
-- **Worklet-Optimized** - Runs entirely on the UI thread
-- **2D Layout Engine** - Grid-based page navigation with overlap support
-- **TypeScript First** - Full type safety out of the box
+- Swipeable multi-page interfaces that are not just a flat carousel.
+- Components that morph between pages without imperative animation code.
+- Event-driven effects such as scroll, zoom, or progress-linked animation.
+- React Native apps that need gesture coordination between page swipes and nested interactions.
+- Persistent animated surfaces such as video, canvas, or GL content that must not unmount offscreen.
 
-## Quick Start
+## Install
+
+Aniview expects a working React Native app with Reanimated and React Native Gesture Handler configured.
 
 ```bash
 npm install aniview react-native-reanimated react-native-gesture-handler
 ```
 
-### Basic Example
+For Expo projects, prefer Expo's version resolver for the peer dependencies:
+
+```bash
+npx expo install react-native-reanimated react-native-gesture-handler
+npm install aniview
+```
+
+Make sure the Reanimated Babel plugin is configured according to the Reanimated docs for your app.
+
+## Minimal Example
 
 ```tsx
-import { AniviewProvider, Aniview } from "aniview";
+import React from "react";
+import { Text, StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Aniview, AniviewProvider } from "aniview";
 
-// 1. Define your layout (3x3 grid)
-const config = new AniviewConfig(
-  [
-    [1, 1, 1],
-    [1, 1, 1],
-    [1, 1, 1],
-  ],
-  0, // default page
-  { HOME: 0, PROFILE: 1, SETTINGS: 2 }, // page map
-);
+const pageMap = {
+  HOME: 0,
+  PROFILE: 1,
+};
 
-// 2. Wrap your app
-function App() {
+export default function App() {
   return (
-    <AniviewProvider config={config}>
-      <Header />
-      <Content />
-    </AniviewProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <AniviewProvider layout={[[1, 1]]} pageMap={pageMap} defaultPage="HOME">
+        <Aniview pageId="HOME" style={[styles.page, styles.home]}>
+          <Text style={styles.title}>Home</Text>
+        </Aniview>
+
+        <Aniview pageId="PROFILE" style={[styles.page, styles.profile]}>
+          <Text style={styles.title}>Profile</Text>
+        </Aniview>
+
+        <Aniview
+          pageId="HOME"
+          style={styles.badge}
+          frames={{
+            atProfile: {
+              page: "PROFILE",
+              style: {
+                backgroundColor: "#e91e63",
+                transform: [{ scale: 1.4 }],
+              },
+            },
+          }}
+        />
+      </AniviewProvider>
+    </GestureHandlerRootView>
   );
 }
 
-// 3. Animate components
-function Header() {
-  return (
-    <Aniview
-      pageId="HOME"
-      frames={{
-        profile: {
-          page: "PROFILE",
-          style: { backgroundColor: "blue" },
-        },
-      }}
-      style={{ height: 100, backgroundColor: "white" }}
-    >
-      <Text>My Header</Text>
-    </Aniview>
-  );
-}
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  page: {
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  home: { backgroundColor: "#e3f2fd" },
+  profile: { backgroundColor: "#fce4ec" },
+  title: { fontSize: 32, fontWeight: "700" },
+  badge: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#2196f3",
+    left: 32,
+    top: 64,
+  },
+});
 ```
+
+Swipe horizontally to move between `HOME` and `PROFILE`. The badge belongs to `HOME`, but its frame describes how it should look when the camera reaches `PROFILE`.
 
 ## Documentation
 
-- **[Getting Started](docs/01-getting-started.md)** - Installation and first steps
-- **[Core Concepts](docs/02-core-concepts.md)** - Understanding the architecture
-- **[API Reference](docs/03-api-reference.md)** - Complete API documentation
-- **[Advanced Patterns](docs/04-advanced-patterns.md)** - Composition, Persistence & Virtualization
-- **[Examples & Recipes](docs/05-examples.md)** - Full Example App Walkthrough
-- **[Performance Guide](docs/06-performance.md)** - Optimization techniques
-- **[Testing](docs/07-testing.md)** - How to test Aniview components
-- **[Gesture Control](docs/08-gesture-control.md)** - Lock system and gesture coordination
-- **[Reporting Issues](docs/09-reporting-issues.md)** - Bug reports and feature requests
+- [Getting Started](docs/01-getting-started.md) - Installation and first working app
+- [Core Concepts](docs/02-core-concepts.md) - Coordinate space, pages, frames, baking, and virtualization
+- [API Reference](docs/03-api-reference.md) - Public components, hooks, methods, and types
+- [Advanced Patterns](docs/04-advanced-patterns.md) - Composition, persistence, and event-driven patterns
+- [Examples & Recipes](docs/05-examples.md) - Larger examples and interaction recipes
+- [Performance Guide](docs/06-performance.md) - Optimization techniques
+- [Testing](docs/07-testing.md) - Testing Aniview logic and components
+- [Gesture Control](docs/08-gesture-control.md) - Gesture toggles, locks, and simultaneous handlers
+- [Reporting Issues](docs/09-reporting-issues.md) - Bug reports and feature requests
+- [Local Development](LOCAL_DEV.md) - Using a local checkout from a React Native app
 
-## Key Concepts
+## Mental Model
 
-### The Grid System
+Aniview has three moving parts:
 
-Aniview uses a **2D grid layout** where each cell represents a "page":
+1. `AniviewProvider` owns the camera, dimensions, page layout, gesture handler, and custom event shared values.
+2. `AniviewConfig` maps page IDs to world coordinates and builds gesture/navigation rules.
+3. `Aniview` components declare a home page plus optional spatial or event frames. On mount, frames are baked into interpolation lanes consumed by Reanimated worklets.
 
-```
-[0, 1, 2]  →  Pages 0, 1, 2 (horizontal row)
-[3, 4, 5]  →  Pages 3, 4, 5 (second row)
-```
-
-Components declare where they "live" (`pageId`) and how they transform when navigating to other pages (`frames`).
-
-### Animation Types
-
-1. **Spatial Animations** - Triggered by page navigation (X/Y position)
-2. **Event-Driven Animations** - Triggered by custom SharedValues (scroll, zoom, etc.)
-
-### The Baking Process
-
-On mount, Aniview:
-
-1. Pre-computes a **grid of all possible states**
-2. Organizes them into **horizontal and vertical lanes**
-3. Marks **constant values** to skip interpolation
-4. All this happens **once**, not on every frame
-
-## Platform Support
-
-Aniview is designed for **React Native** (iOS and Android). It is compatible with:
-
-- **Expo** managed workflow (SDK 49+)
-- **React Native CLI** projects
-- **New Architecture** (Fabric) — fully compatible (pure JS/TS + Reanimated worklets)
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+The important composition rule: use sibling `Aniview` components for world-positioned elements. Nest `Aniview` components only when you intentionally want parent and child transforms to combine.
 
 ## License
 
-MIT © Madelyn Cruz Tan
-
-## Credits
-
-Built with:
-
-- [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated)
-- [react-native-gesture-handler](https://github.com/software-mansion/react-native-gesture-handler)
+MIT (c) Madelyn Cruz Tan (TitanicEclair)

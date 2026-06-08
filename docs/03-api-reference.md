@@ -6,50 +6,54 @@ title: API Reference
 
 # API Reference
 
-## Table of Contents
+This page documents the public API exported from `src/index.ts`.
 
-- [AniviewProvider](#aniviewprovider)
-- [Aniview](#aniview)
-- [AniviewConfig](#aniviewconfig)
-- [Hooks](#hooks)
-- [Types](#types)
-
----
+```ts
+import {
+  Aniview,
+  AniviewProvider,
+  AniviewConfig,
+  useAniview,
+  useAniviewLock,
+  AniviewLock,
+} from "aniview";
+```
 
 ## AniviewProvider
 
-The root component that sets up the animation context and gesture handling.
+Root provider for the Aniview world. It owns the camera shared values, provider dimensions, gesture handler, page config, custom event shared values, and imperative navigation API.
+
+```tsx
+<AniviewProvider layout={[[1, 1]]} pageMap={{ HOME: 0, DETAILS: 1 }}>
+  {/* Aniview children */}
+</AniviewProvider>
+```
 
 ### Props
 
-| Prop           | Type                          | Required | Default     | Description                    |
-| -------------- | ----------------------------- | -------- | ----------- | ------------------------------ |
-| `children`     | `ReactNode`                   | ✅       | -           | Child components               |
-| `config`       | `AniviewConfig`               | ✅       | -           | Configuration instance         |
-| `dimensions`   | `Partial<Dimensions>`         | ❌       | Screen size | Override viewport size         |
-| `defaultPage`  | `number \| string`            | ❌       | `0`         | Initial page                   |
-| `onPageChange` | `(pageId) => void`            | ❌       | -           | Page change callback           |
-| `activePage`   | `number \| string`            | ❌       | -           | Controlled page (legacy)       |
-| `gestureRef`   | `RefObject<PanGesture>`       | ❌       | -           | External gesture ref           |
-| `springConfig` | `WithSpringConfig`            | ❌       | See below   | Custom physics                 |
-| `events`       | `Record<string, SharedValue>` | ❌       | `{}`        | Event-driven animation drivers |
+| Prop | Type | Required | Default | Notes |
+| --- | --- | --- | --- | --- |
+| `children` | `React.ReactNode` | Yes | - | Rendered inside the gesture detector and provider context. |
+| `config` | `AniviewConfig` | No | internal `[[1]]` config | Use this for advanced layouts, overlaps, or custom adjacency. |
+| `layout` | `number[][]` | No | `[[1]]` | Convenience alternative to `config`. `1` means active page, `0` means empty cell. |
+| `defaultPage` | `number \| string` | No | `0` | Initial page ID. Semantic strings are resolved through `pageMap`. |
+| `pageMap` | `Record<string, number>` | No | `{}` | Maps names such as `HOME` to numeric page IDs. |
+| `pageSize` | `{ width: number; height: number }` | No | measured provider size | Explicit page size. |
+| `dimensions` | `Partial<{ width; height; offsetX; offsetY }>` | No | measured provider size | Low-level dimension override. |
+| `onPageChange` | `(pageId: number \| string) => void` | No | - | Called when a snap target changes. |
+| `activePage` | `number \| string` | No | - | Legacy declarative page control. Prefer the ref API for new code. |
+| `springConfig` | `WithSpringConfig` | No | config default | Overrides snap spring physics. |
+| `events` | `Record<string, SharedValue<number>>` | No | `{}` | Custom Reanimated shared values used by event frames. |
+| `gestureRef` | `React.RefObject<any>` | No | internal ref | External ref for the provider pan gesture. |
+| `externalLockMask` | `SharedValue<number>` | No | internal mask | Advanced gesture lock mask. See Gesture Control. |
+| `gestureEnabled` | `SharedValue<boolean>` | No | internal `true` | Globally enables/disables the provider pan gesture. |
+| `simultaneousHandlers` | `RefObject<GestureType> \| RefObject<GestureType>[]` | No | - | RNGH gestures that may run simultaneously with Aniview's pan gesture. |
 
-### Default Spring Config
+### Ref API
 
-```typescript
-{
-  damping: 60,
-  stiffness: 200,
-  mass: 0.6,
-  overshootClamping: true,
-  restDisplacementThreshold: 0.01,
-  restSpeedThreshold: 2
-}
-```
+Attach a ref to call the imperative navigation methods.
 
-### Ref API (`AniviewHandle`)
-
-```typescript
+```ts
 interface AniviewHandle {
   snapToPage: (pageId: number | string) => void;
   getCurrentPage: () => number | string;
@@ -57,342 +61,193 @@ interface AniviewHandle {
 }
 ```
 
-### Example
-
 ```tsx
-const aniviewRef = useRef<AniviewHandle>(null);
+const ref = useRef<AniviewHandle>(null);
 
-<AniviewProvider
-  config={config}
-  ref={aniviewRef}
-  defaultPage="HOME"
-  onPageChange={(page) => console.log("Now at:", page)}
-  springConfig={{ damping: 80, stiffness: 300 }}
-  events={{ scrollFactor: myScrollValue }}
->
-  <App />
-</AniviewProvider>;
+<AniviewProvider ref={ref} layout={[[1, 1]]}>
+  {/* children */}
+</AniviewProvider>
 
-// Imperative navigation:
-aniviewRef.current.snapToPage("SETTINGS");
+ref.current?.snapToPage(1);
 ```
-
----
 
 ## Aniview
 
-The animated component that responds to camera position and events.
+Animated world-positioned view. Each `Aniview` has a home page and optional frames.
 
 ### Props
 
-| Prop            | Type                       | Required | Default  | Description                        |
-| --------------- | -------------------------- | -------- | -------- | ---------------------------------- |
-| `pageId`        | `number \| string`         | ✅       | -        | Home page identifier               |
-| `frames`        | `Frames`                   | ❌       | `{}`     | Animation keyframes                |
-| `style`         | `ViewStyle \| ViewStyle[]` | ❌       | `{}`     | Base styles                        |
-| `children`      | `ReactNode`                | ❌       | -        | Child content                      |
-| `pointerEvents` | `PointerEvents`            | ❌       | `'auto'` | Touch handling                     |
-| `persistent`    | `boolean`                  | ❌       | `false`  | Keep mounted offscreen (for 3D/GL) |
-| ...`ViewProps`  | -                          | ❌       | -        | All standard View props            |
+| Prop | Type | Required | Default | Notes |
+| --- | --- | --- | --- | --- |
+| `pageId` | `number \| string` | Yes | - | Home page for this component. |
+| `frames` | `Record<string, AniviewFrame> \| AniviewFrame[]` | No | `{}` | Spatial and/or event frame definitions. |
+| `style` | `ViewStyle \| ViewStyle[]` | No | `{}` | Base style at the home page. |
+| `children` | `React.ReactNode` | No | - | Rendered inside the animated view. |
+| `pointerEvents` | `"box-none" \| "none" \| "box-only" \| "auto"` | No | React Native default | Passed to the rendered view. |
+| `persistent` | `boolean` | No | `false` | Keeps the component mounted when far offscreen. Useful for GL/canvas/video/local state. |
+| other `ViewProps` | `AnimatedProps<ViewProps>` | No | - | Forwarded to the animated view. |
 
-### Frames Structure
+### Frames
 
-```typescript
-type Frames = Record<string, AniviewFrame> | AniviewFrame[];
-
+```ts
 interface AniviewFrame {
-  // Spatial trigger (page-based)
   page?: number | string;
-
-  // Event trigger (1D animation)
   event?: string;
   value?: number;
-
-  // Style overrides
   style?: ViewStyle | ViewStyle[];
-
-  // Shortcuts
+  eventPersistent?: boolean;
+  persistent?: boolean; // deprecated alias for eventPersistent
   opacity?: number;
   scale?: number;
-  rotate?: number; // degrees
+  rotate?: number;
+  springConfig?: any;
 }
 ```
 
-### Supported Style Properties
-
-#### Numeric Properties
-
-- Layout: `width`, `height`, `left`, `top`, `right`, `bottom`
-- Margins: `marginTop`, `marginLeft`, etc.
-- Padding: `paddingTop`, `paddingLeft`, etc.
-- Border: `borderRadius`, `borderWidth`, etc.
-- Shadow: `shadowRadius`, `shadowOpacity`, `elevation`
-- Opacity: `opacity`
-
-#### Color Properties
-
-- `backgroundColor`
-- `borderColor`
-- `shadowColor`
-- `color` (for Text children)
-- Any property containing "color"
-
-#### Transform Properties
-
-- `translateX`, `translateY`
-- `scale`, `scaleX`, `scaleY`
-- `rotate`, `rotateX`, `rotateY`, `rotateZ`
-- `skewX`, `skewY`
-
-### Examples
-
-#### Basic Fade
+Spatial frames use `page`:
 
 ```tsx
 <Aniview
   pageId="HOME"
   style={{ opacity: 1 }}
   frames={{
-    hidden: { page: "AWAY", opacity: 0 },
+    hiddenOnProfile: {
+      page: "PROFILE",
+      style: { opacity: 0 },
+    },
   }}
 />
 ```
 
-#### Multi-Property Animation
+Event frames use `event` and `value`. The event name must exist in `AniviewProvider events`.
 
 ```tsx
-<Aniview
-  pageId="HOME"
-  style={{
-    width: 200,
-    height: 200,
-    backgroundColor: "white",
-    transform: [{ scale: 1 }],
-  }}
-  frames={{
-    scaled: {
-      page: "DETAIL",
-      style: {
-        width: 400,
-        height: 400,
-        backgroundColor: "blue",
-        transform: [{ scale: 1.5 }],
+const scrollY = useSharedValue(0);
+
+<AniviewProvider layout={[[1]]} events={{ scrollY }}>
+  <Aniview
+    pageId={0}
+    frames={{
+      collapsed: {
+        event: "scrollY",
+        value: 120,
+        style: { opacity: 0, transform: [{ translateY: -40 }] },
       },
-    },
-  }}
-/>
+    }}
+  />
+</AniviewProvider>
 ```
 
-#### Event-Driven Animation
+### Style Support
 
-```tsx
-<Aniview
-  pageId="HOME"
-  frames={{
-    scrolled: {
-      event: "scrollFactor",
-      value: 0,
-      style: { opacity: 0.3 },
-    },
-    fullyScrolled: {
-      event: "scrollFactor",
-      value: 1,
-      style: { opacity: 1 },
-    },
-  }}
-/>
-```
+Aniview bakes and interpolates common numeric, color, and transform values from flattened React Native styles.
 
----
+- Numeric examples: `width`, `height`, `left`, `top`, `opacity`, `borderRadius`, margins, padding, `shadowOpacity`, `shadowRadius`, `elevation`
+- Color examples: `backgroundColor`, `borderColor`, `shadowColor`, `color`, and other keys containing `color`
+- Transform examples: `translateX`, `translateY`, `scale`, `scaleX`, `scaleY`, `rotate`, `rotateX`, `rotateY`, `rotateZ`, `skewX`, `skewY`
+
+Unsupported or non-interpolated style values are carried through as static style data when possible.
 
 ## AniviewConfig
 
-Configuration object that manages the grid layout, page mappings, and gesture logic.
+Configuration engine for page layout, page ID resolution, page offsets, overlap math, layout cache, and gesture generation.
 
 ### Constructor
 
-```typescript
+```ts
 new AniviewConfig(
   layout: number[][],
-  defaultPage?: number | string,
+  defaultPage?: number | string | null,
   pageMap?: Record<string, number>,
   initialDims?: Partial<Dimensions>,
-  overlaps?: { rows?: number[], cols?: number[] },
-  adjacencyGraph?: AdjacencyMap
+  overlaps?: { cols?: number[]; rows?: number[] },
+  providedGraph?: AdjacencyMap | null
 )
 ```
 
-### Parameters
+| Parameter | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `layout` | `number[][]` | `[[1]]` | Grid matrix. Active page IDs are computed as `rowIndex * columnCount + columnIndex`. |
+| `defaultPage` | `number \| string \| null` | `0` | Initial page and world origin. |
+| `pageMap` | `Record<string, number>` | `{}` | Semantic name to numeric page ID map. |
+| `initialDims` | `Partial<Dimensions>` | `{}` | Initial dimensions before provider measurement. |
+| `overlaps` | `{ cols?: number[]; rows?: number[] }` | `{}` | Adjacent page overlap ratios. |
+| `providedGraph` | `AdjacencyMap \| null` | `null` | Reserved custom adjacency map. |
 
-| Parameter        | Type                     | Default      | Description                        |
-| ---------------- | ------------------------ | ------------ | ---------------------------------- |
-| `layout`         | `number[][]`             | **Required** | 2D grid (1 = active, 0 = disabled) |
-| `defaultPage`    | `number \| string`       | `0`          | Starting page                      |
-| `pageMap`        | `Record<string, number>` | `{}`         | Semantic name mapping              |
-| `initialDims`    | `Partial<Dimensions>`    | `{}`         | Initial dimensions                 |
-| `overlaps`       | `{ rows?, cols? }`       | `{}`         | Row/column overlap ratios (0-1)    |
-| `adjacencyGraph` | `AdjacencyMap`           | `{}`         | Custom snap adjacency              |
+### Common Methods
 
-### Methods
-
-#### `getPageOffset(pageId, dims): { x, y }`
-
-Get world coordinates for a page.
-
-```typescript
-const offset = config.getPageOffset("HOME", dimensions);
-// => { x: 0, y: 0 }
-```
-
-#### `resolvePageId(pageId): number`
-
-Convert semantic name to numeric ID.
-
-```typescript
-config.resolvePageId("HOME"); // => 0
-config.resolvePageId(0); // => 0
-```
-
-#### `getPages(): number[]`
-
-Get all active page IDs.
-
-```typescript
-config.getPages(); // => [0, 1, 2, 3, 5, 6, 7, 8]
-```
-
-#### `getPagesMap(dims): Record<number, { x, y }>`
-
-Get all page coordinates.
-
-```typescript
-config.getPagesMap(dimensions);
-// => { 0: { x: 0, y: 0 }, 1: { x: 430, y: 0 }, ... }
-```
-
-#### `getWorldBounds(dims): WorldBounds`
-
-Get min/max world coordinates.
-
-```typescript
-config.getWorldBounds(dimensions);
-// => { minX: 0, maxX: 1290, minY: 0, maxY: 1864 }
-```
-
-#### `updateDimensions(dims): void`
-
-Update viewport dimensions.
-
-```typescript
-config.updateDimensions({ width: 414, height: 896, offsetX: 0, offsetY: 0 });
-```
-
-#### `updateSpringConfig(config): void`
-
-Update spring physics.
-
-```typescript
-config.updateSpringConfig({ damping: 70, stiffness: 250 });
-```
-
-### Example
-
-```typescript
-const config = new AniviewConfig(
-  [
-    [1, 1, 1],
-    [1, 0, 1],
-    [1, 1, 1],
-  ],
-  "HOME", // Default page
-  {
-    HOME: 0,
-    FEED: 1,
-    PROFILE: 2,
-    SETTINGS: 3,
-    DETAIL: 5,
-  },
-  { width: 430, height: 932 }, // Initial dims
-  { rows: [0, 0.1], cols: [0, 0] }, // 10% vertical overlap between rows
-);
-```
-
----
+| Method | Returns | Notes |
+| --- | --- | --- |
+| `resolvePageId(pageId)` | `number` | Resolves a numeric or semantic page ID. Unknown strings parse as numbers or fall back to `0`. |
+| `getPages()` | `number[]` | Active page IDs from the layout matrix. |
+| `getPageOffset(pageId, dims)` | `{ x: number; y: number }` | World coordinate offset for a page. |
+| `getPagesMap(dims)` | `Record<number, { x; y }>` | Offset map for all active pages. |
+| `getWorldBounds(dims)` | `WorldBounds` | Min/max camera bounds for gesture clamping. |
+| `updateDimensions(dims)` | `void` | Updates config dimension state. |
+| `updateSpringConfig(config)` | `void` | Merges spring physics overrides. |
+| `getSpringConfig()` | `WithSpringConfig` | Returns current snap spring config. |
+| `registerLayout(componentId, layout)` | `void` | Caches measured component layout for remounts. |
+| `getLayout(componentId)` | layout or `undefined` | Reads cached component layout. |
 
 ## Hooks
 
-### `useAniview()`
+### useAniview()
 
-Access Aniview context from any child component.
+Returns the provider context. Throws if called outside `AniviewProvider`.
 
-```typescript
-const { dimensions, events, config, activationMap, visiblePages, isMoving } =
-  useAniview();
+```tsx
+const {
+  dimensions,
+  events,
+  config,
+  panGesture,
+  visiblePages,
+  isMoving,
+  parentGestureRef,
+  currentPageSV,
+} = useAniview();
 ```
 
-**Returns:**
+| Field | Type | Notes |
+| --- | --- | --- |
+| `dimensions` | `{ width; height; offsetX; offsetY }` | Current provider dimensions. |
+| `events` | `{ x; y; [eventName]: SharedValue<number> }` | Camera shared values plus custom events. |
+| `activationMap` | `Record<number, SharedValue<number>>` | Internal page activation map. |
+| `panGesture` | `any` | Provider pan gesture. |
+| `config` | `IAniviewConfig` | Active config instance. |
+| `lock` | `(mask: number) => void` | Low-level gesture lock setter. |
+| `visiblePages` | `Set<number>` | Current near-page set. |
+| `isMoving` | `SharedValue<boolean>` | Whether snapping/gesture movement is in progress. |
+| `parentGestureRef` | `React.RefObject<any>` | Ref for child gesture coordination. |
+| `currentPageSV` | `SharedValue<number \| string>` | Last snapped target page. |
 
-- `dimensions: Dimensions` - Current viewport size
-- `events: { x, y, ...custom }` - Camera position and custom events
-- `config: IAniviewConfig` - Configuration instance
-- `activationMap: Record<number, SharedValue>` - Page activation states
-- `panGesture: PanGesture` - Main gesture handler
-- `visiblePages: Set<number>` - Currently visible page IDs
-- `isMoving: SharedValue<boolean>` - Whether Aniview is currently snapping/animating
+`useAniview(props)` is an internal overload used by `Aniview` itself to register a component. Most apps should use `useAniview()` without arguments.
 
-### `useAniviewLock()`
+### useAniviewLock()
 
-Lock/unlock specific swipe directions from within any child component.
+Directional gesture-lock helper built on the nearest provider context.
 
-```typescript
-const { lockDirections, unlock, isMoving, AniviewLock } = useAniviewLock();
+```tsx
+const { lockDirections, unlock, isMoving } = useAniviewLock();
+
+lockDirections({ left: true, right: true });
+unlock();
 ```
 
-**Returns:**
-
-| Property         | Type                                | Description              |
-| ---------------- | ----------------------------------- | ------------------------ |
-| `lockDirections` | `(dirs: AniviewAxisLock) => void`   | Lock specific directions |
-| `unlock`         | `() => void`                        | Release all locks        |
-| `isMoving`       | `SharedValue<boolean> \| undefined` | Animation state          |
-| `AniviewLock`    | `{ mask: (dirs) => number }`        | Bitmask utility          |
-
-**AniviewAxisLock:**
-
-```typescript
+```ts
 type AniviewAxisLock = {
-  left?: boolean; // bit 1
-  right?: boolean; // bit 2
-  up?: boolean; // bit 4
-  down?: boolean; // bit 8
+  left?: boolean;
+  right?: boolean;
+  up?: boolean;
+  down?: boolean;
 };
 ```
 
-**Example:**
-
-```tsx
-function MyComponent() {
-  const { lockDirections, unlock } = useAniviewLock();
-
-  const onScrollStart = () => lockDirections({ left: true, right: true });
-  const onScrollEnd = () => unlock();
-
-  return (
-    <ScrollView
-      onScrollBeginDrag={onScrollStart}
-      onScrollEndDrag={onScrollEnd}
-    />
-  );
-}
-```
-
----
+`AniviewLock.mask(directions)` returns the numeric mask for a direction object. Prefer this helper over hand-coded masks in app code.
 
 ## Types
 
-### Core Types
-
-```typescript
+```ts
 interface Dimensions {
   width: number;
   height: number;
@@ -410,54 +265,8 @@ interface WorldBounds {
 type AdjacencyMap = Record<number, Record<number, number>>;
 ```
 
-### Animation Types
-
-```typescript
-interface AniviewFrame {
-  page?: number | string;
-  event?: string;
-  value?: number;
-  style?: ViewStyle | ViewStyle[];
-  opacity?: number;
-  scale?: number;
-  rotate?: number;
-  springConfig?: WithSpringConfig;
-}
-
-interface BakedFrame extends AniviewFrame {
-  worldX: number;
-  worldY: number;
-}
-```
-
-### Provider Types
-
-```typescript
-interface AniviewHandle {
-  snapToPage: (pageId: number | string) => void;
-  getCurrentPage: () => number | string;
-  lock: (mask: number) => void;
-}
-
-interface AniviewContextType {
-  dimensions: Dimensions;
-  events: {
-    x: SharedValue<number>;
-    y: SharedValue<number>;
-    [key: string]: SharedValue<number>;
-  };
-  activationMap: Record<number, SharedValue<number>>;
-  panGesture: PanGesture;
-  config: IAniviewConfig;
-  lock: (mask: number) => void;
-  visiblePages: Set<number>;
-}
-```
-
----
-
 ## Next Steps
 
-- See practical examples in [Examples & Recipes](05-examples.md)
-- Learn optimization techniques in [Performance Guide](06-performance.md)
-- Understand testing in [Testing Guide](07-testing.md)
+- [Getting Started](01-getting-started.md)
+- [Core Concepts](02-core-concepts.md)
+- [Gesture Control](08-gesture-control.md)

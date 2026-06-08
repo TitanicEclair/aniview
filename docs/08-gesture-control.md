@@ -5,7 +5,7 @@
 Aniview provides built-in gesture control for page navigation. For complex UIs with nested scroll views, buttons, or custom gestures, you can control how Aniview's pan gesture behaves using two mechanisms:
 
 1. **`gestureEnabled`** — Simple on/off toggle
-2. **`externalLockMask`** — Axis-specific control (lock horizontal, vertical, or both independently)
+2. **`externalLockMask`** — Directional control for blocking left, right, up, or down page movement
 
 ---
 
@@ -28,11 +28,9 @@ Then toggle it from any child component:
 ```tsx
 <Pressable
   onPressIn={() => {
-    "worklet";
     gestureEnabled.value = false;
   }}
   onPressOut={() => {
-    "worklet";
     gestureEnabled.value = true;
   }}
 >
@@ -42,16 +40,16 @@ Then toggle it from any child component:
 
 ### When to Use
 
-- ✅ Buttons/Pressables (prevent accidental swipes while pressing)
-- ✅ Modals/Bottom Sheets (disable background navigation)
-- ✅ Long-press interactions
-- ✅ Any "disable all panning" scenario
+- Buttons and pressable controls that should not trigger page swipes.
+- Modals and bottom sheets that should disable background navigation.
+- Long-press interactions.
+- Any case where all Aniview page panning should be disabled temporarily.
 
 ---
 
 ## externalLockMask (Advanced API)
 
-For axis-specific control, pass a `SharedValue<number>` as `externalLockMask`:
+For low-level control, pass a `SharedValue<number>` as `externalLockMask`:
 
 ```tsx
 const lockMask = useSharedValue(0);
@@ -63,24 +61,24 @@ const lockMask = useSharedValue(0);
 
 ### Bit Pattern
 
-| Value | Binary | Effect                       |
-| ----- | ------ | ---------------------------- |
-| `0`   | `0b00` | No lock (default)            |
-| `1`   | `0b01` | Lock horizontal panning only |
-| `2`   | `0b10` | Lock vertical panning only   |
-| `3`   | `0b11` | Lock both axes               |
+Use `AniviewLock.mask(...)` instead of hand-writing masks when possible.
+
+| Direction | Bit |
+| --- | --- |
+| `left` | `1` |
+| `right` | `2` |
+| `up` | `4` |
+| `down` | `8` |
 
 ### Usage Example
 
 ```tsx
 <ScrollView
   onScrollBeginDrag={() => {
-    "worklet";
-    lockMask.value = 1; // Lock horizontal — allow vertical scroll
+    lockMask.value = AniviewLock.mask({ left: true, right: true });
   }}
   onScrollEndDrag={() => {
-    "worklet";
-    lockMask.value = 0; // Release
+    lockMask.value = 0;
   }}
 >
   {/* Vertical scroll works, horizontal page swipes blocked */}
@@ -89,23 +87,21 @@ const lockMask = useSharedValue(0);
 
 ### When to Use
 
-- ✅ Nested ScrollViews (block Aniview on one axis, allow the other)
-- ✅ Custom gestures that conflict with specific axes
-- ✅ Complex multi-directional interactions
+- Nested scroll views where one movement direction should belong to the child.
+- Custom gestures that conflict with specific page movement directions.
+- Complex multi-directional interactions.
 
 ---
 
-## `lockMask === 3` Optimization
+## Disabling All Panning
 
-When `lockMask.value === 3` (both axes locked), Aniview internally treats this as `gestureEnabled = false`. This means:
+Use `gestureEnabled` when you want to disable all Aniview panning. It is clearer than setting every lock bit manually:
 
 ```typescript
-// These are equivalent:
 gestureEnabled.value = false;
-lockMask.value = 3; // Same effect
 ```
 
-**Recommendation:** Use `gestureEnabled` for simpler code when you want to disable all panning.
+For directional locking, set the mask back to `0` when the child interaction ends.
 
 ---
 
@@ -129,22 +125,24 @@ This allows `myGesture` to run **simultaneously** with Aniview's internal pan ge
 
 ## Comparison
 
-| Scenario            | Use `gestureEnabled` | Use `lockMask`       |
-| ------------------- | -------------------- | -------------------- |
-| Button press-drag   | ✅                   | ❌                   |
-| Modal open          | ✅                   | ❌                   |
-| Vertical ScrollView | ❌                   | ✅ (lock horizontal) |
-| Horizontal FlatList | ❌                   | ✅ (lock vertical)   |
-| Tutorial/Onboarding | ✅                   | ❌                   |
-| Pinch zoom active   | ✅                   | ❌                   |
+| Scenario | Recommended control |
+| --- | --- |
+| Button press-drag | `gestureEnabled` |
+| Modal open | `gestureEnabled` |
+| Vertical `ScrollView` | `externalLockMask`, lock `left` and `right` |
+| Horizontal `FlatList` | `externalLockMask`, lock `up` and `down` |
+| Tutorial or onboarding step | `gestureEnabled` |
+| Pinch zoom active | `gestureEnabled` |
 
 ---
 
 ## Complete Example
 
 ```tsx
+import React from "react";
+import { Pressable, ScrollView, Text } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
-import { AniviewProvider, AniviewConfig } from "aniview";
+import { AniviewLock, AniviewProvider } from "aniview";
 
 function MyApp() {
   const gestureEnabled = useSharedValue(true);
@@ -152,7 +150,7 @@ function MyApp() {
 
   return (
     <AniviewProvider
-      config={config}
+      layout={[[1, 1]]}
       gestureEnabled={gestureEnabled}
       externalLockMask={lockMask}
     >
@@ -171,7 +169,7 @@ function MyApp() {
       {/* Vertical scroll: lock horizontal only */}
       <ScrollView
         onScrollBeginDrag={() => {
-          lockMask.value = 1;
+          lockMask.value = AniviewLock.mask({ left: true, right: true });
         }}
         onScrollEndDrag={() => {
           lockMask.value = 0;
@@ -191,8 +189,7 @@ function MyApp() {
 1. **Prefer `gestureEnabled` for simple cases** — clearer intent
 2. **Use `lockMask` only when you need axis-specific control**
 3. **Always release locks** — add `onPressOut`, `onScrollEndDrag`, etc.
-4. **Use the worklet directive** — all SharedValue mutations in gesture/scroll callbacks should be in worklets
-5. **Test on real devices** — gesture behavior can differ from simulator
+4. **Test on real devices** — gesture behavior can differ from simulator
 
 ---
 

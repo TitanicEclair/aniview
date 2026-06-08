@@ -1,3 +1,9 @@
+---
+id: advanced-patterns
+slug: /advanced-patterns
+title: Advanced Patterns
+---
+
 # Advanced Patterns
 
 This guide covers advanced Aniview patterns for complex applications.
@@ -44,7 +50,7 @@ You can control this relative movement using **Events**. By driving the child's 
 Events allow you to decouple a component's movement from the camera's page-snapping logic.
 
 - **See [Core Concepts: Event-Driven Animations](02-core-concepts.md#2-event-driven-animations)** for the syntax of setting up events.
-- **See [Examples: Zoom Event](05-examples.md#4-zoom-event--persistent-event-frames)** for a practical example of event frames.
+- **See [Examples: Zoom Event](05-examples.md#4-zoom-event--event-persistent-frames)** for a practical example of event frames.
 
 To create a relative movement effect (like a Parallax layer):
 

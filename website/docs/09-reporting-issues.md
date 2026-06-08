@@ -79,5 +79,5 @@ Before filing, check if your issue matches one of these:
 
 ## See Also
 
-- [Contributing Guidelines](../CONTRIBUTING.md) — How to submit fixes and features
+- [Contributing Guidelines](https://github.com/TitanicEclair/aniview/blob/main/CONTRIBUTING.md) — How to submit fixes and features
 - [Testing Guide](07-testing.md) — How to test your Aniview components

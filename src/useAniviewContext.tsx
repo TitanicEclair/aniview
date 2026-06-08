@@ -1,6 +1,6 @@
 import React, { createContext } from "react";
 import { SharedValue, AnimatedProps, WithSpringConfig } from "react-native-reanimated";
-import { PanGesture } from "react-native-gesture-handler";
+import { PanGesture, GestureType } from "react-native-gesture-handler";
 import { ViewProps, ViewStyle } from "react-native";
 import { WorldBounds } from "./core/AniviewMath";
 
@@ -18,9 +18,13 @@ export interface AniviewFrame {
   value?: number;
   /** Style overrides for this frame */
   style?: ViewStyle | ViewStyle[];
-  /** 
+  /**
    * If true, this event-driven frame remains active across all pages.
    * If false (default), the effect is modulated by proximity to the component's home page.
+   */
+  eventPersistent?: boolean;
+  /**
+   * @deprecated Use `eventPersistent` instead. Kept for backward compatibility.
    */
   persistent?: boolean;
   /** Optional opacity override shortcut */
@@ -121,7 +125,7 @@ export interface IAniviewConfig {
     y: SharedValue<number>, 
     onPageChange?: (pageId: number | string) => void, 
     lockMask?: SharedValue<number>, 
-    simultaneousHandlers?: any,
+    simultaneousHandlers?: React.RefObject<GestureType> | React.RefObject<GestureType>[],
     gestureEnabled?: SharedValue<boolean>,
     dims?: AniviewContextType['dimensions'],
     isSnapping?: SharedValue<boolean>,
@@ -133,6 +137,15 @@ export interface IAniviewConfig {
 
   /** Returns the current active page ID (SharedValue) */
   getCurrentPage(): SharedValue<number | string>;
+
+  /** The grid layout matrix (read-only). 1 = valid page, 0 = empty slot. */
+  readonly layout: number[][];
+
+  /** Cache a component's measured local layout for virtualization. */
+  registerLayout(componentId: string, layout: { x: number; y: number }): void;
+
+  /** Read a cached component local layout. Returns undefined if not cached. */
+  getLayout(componentId: string): { x: number; y: number } | undefined;
 }
 
 export interface AniviewContextType {
@@ -156,6 +169,26 @@ export interface AniviewContextType {
   visiblePages: Set<number>;
   /** Tracks if Aniview is currently snapping/animating toward a page */
   isMoving: SharedValue<boolean>;
+  /**
+   * The current active page ID as a SharedValue.
+   *
+   * Updates on the UI thread whenever the camera snaps to a new page.
+   * Children can observe this in worklets to react to page changes
+   * without crossing the JS bridge.
+   */
+  currentPageSV: SharedValue<number | string>;
+  /**
+   * Ref to the Aniview Pan gesture's native handler.
+   *
+   * Child components can use this to declare their own gestures as
+   * simultaneous with Aniview's page-swiping gesture:
+   *
+   * ```tsx
+   * const { parentGestureRef } = useAniview();
+   * const myGesture = Gesture.Pan().simultaneousWithExternalGesture(parentGestureRef);
+   * ```
+   */
+  parentGestureRef: React.RefObject<any>;
 }
 
 /**
@@ -165,6 +198,45 @@ export interface AniviewLogic extends AniviewContextType {
   registration: AniviewRegistration;
   activationValue: SharedValue<number>;
   keyframes: Record<string, AniviewFrame> | undefined;
+  parentGestureRef: React.RefObject<any>;
+}
+
+/**
+ * Baked event animation lane — pre-computed 1D interpolation table.
+ */
+export interface BakedLane {
+  /** Sorted driver input values */
+  values: number[];
+  /** Per-key output ranges (index-aligned with `keys`) */
+  outputRanges: any[][];
+  /** Property keys affected by this event lane */
+  keys: string[];
+  /** Whether the event effect persists regardless of camera proximity */
+  eventPersistent: boolean;
+}
+
+/**
+ * Fully baked interpolation data for a single Aniview component.
+ *
+ * Computed once on the JS thread during the "bake" phase and consumed
+ * every frame on the UI thread via `useAnimatedStyle`.
+ */
+export interface BakedResult {
+  homeX: number;
+  homeY: number;
+  localX: number;
+  localY: number;
+  bakedH: any[];
+  bakedV: any[];
+  bakedCH: any[];
+  bakedCV: any[];
+  eventLanes: Record<string, BakedLane>;
+  uniqueX: number[];
+  uniqueY: number[];
+  numericKeys: string[];
+  colorKeys: string[];
+  baseProps: any;
+  homeProps: any;
 }
 
 export const AniviewContext = createContext<AniviewContextType | null>(null);
